@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Unit 4 Test – Food (B)</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#fdf8f3;--card:#fff;
+  --pr:#d97706;--pr-l:#fef3c7;
+  --blue:#2563eb;--blue-l:#dbeafe;
+  --ok:#059669;--ok-l:#d1fae5;
+  --err:#dc2626;--err-l:#fee2e2;
+  --sky:#0284c7;--sky-l:#e0f2fe;
+  --text:#1c1917;--muted:#78716c;--border:#e7e5e4;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.06);
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  background:var(--bg);color:var(--text);min-height:100vh;
+  -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+.screen{display:none!important}
+.screen.active{display:block!important}
+#screen-intro.active,#screen-lock.active{display:flex!important}
+
+#hdr{position:sticky;top:0;z-index:200;background:var(--pr);color:#fff;
+  padding:10px 16px;display:flex;align-items:center;justify-content:space-between;
+  box-shadow:0 2px 8px rgba(217,119,6,.35)}
+#hdr-prog{font-size:12px;opacity:.88;font-weight:600;letter-spacing:.3px}
+#hdr-timer{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:1.5px}
+#hdr-timer.warn{animation:twarn 1s infinite}
+#hdr-timer.danger{animation:tdanger .7s infinite}
+@keyframes twarn{0%,100%{opacity:1}50%{opacity:.55}}
+@keyframes tdanger{0%,100%{color:#fff}50%{color:#fca5a5}}
+
+.card{background:var(--card);border-radius:18px;padding:20px 18px;
+  margin:14px 14px 0;box-shadow:var(--shadow)}
+.card:last-child{margin-bottom:14px}
+.ex-label{font-size:11px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:var(--pr);margin-bottom:3px}
+.ex-title{font-size:21px;font-weight:800;margin-bottom:6px}
+.ex-inst{font-size:14px;color:var(--muted);line-height:1.55;margin-bottom:14px}
+.dots{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:4px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--border);transition:background .25s}
+.dot.ok{background:var(--ok)}.dot.ng{background:var(--err)}.dot.cur{background:var(--pr)}
+
+.qbox{background:var(--pr-l);border-radius:13px;padding:15px 16px;margin-bottom:14px;border-left:4px solid var(--pr)}
+.speaker{font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--pr);margin-bottom:5px}
+.qtext{font-size:17px;line-height:1.65;font-weight:500}
+.gap{display:inline-block;background:#fff;border:2px dashed var(--pr);border-radius:6px;
+  padding:1px 10px;min-width:44px;text-align:center;font-weight:800;transition:all .2s}
+.gap.ok{border-color:var(--ok);background:var(--ok-l);color:var(--ok)}
+.gap.ng{border-color:var(--err);background:var(--err-l);color:var(--err)}
+
+.opts{display:grid;gap:10px;margin-top:4px}
+.opts.g2{grid-template-columns:1fr 1fr}
+.opts.g1{grid-template-columns:1fr}
+.opt{padding:14px 10px;border:2px solid var(--border);border-radius:13px;
+  background:#fff;font-size:15px;font-weight:700;cursor:pointer;text-align:center;transition:all .15s}
+.opt:active{transform:scale(.96)}
+.opt.sel{border-color:var(--blue);background:var(--blue);color:#fff}
+.opt.ok{border-color:var(--ok)!important;background:var(--ok-l)!important;color:#065f46!important}
+.opt.ng{border-color:var(--err)!important;background:var(--err-l)!important;color:#991b1b!important}
+.opt:disabled{cursor:not-allowed}
+
+.fb{border-radius:11px;padding:11px 14px;margin-top:12px;font-size:14px;font-weight:700;display:none;line-height:1.45}
+.fb.ok{background:var(--ok-l);color:#065f46}
+.fb.ng{background:var(--err-l);color:#991b1b}
+
+.next-btn{display:none;width:100%;padding:15px;background:var(--pr);color:#fff;
+  border:none;border-radius:13px;font-size:16px;font-weight:800;cursor:pointer;margin-top:12px}
+.next-btn:active{opacity:.85}
+.submit-btn{width:100%;padding:15px;background:var(--pr);color:#fff;
+  border:none;border-radius:13px;font-size:16px;font-weight:800;cursor:pointer;margin-top:12px}
+.submit-btn:disabled{opacity:.4;cursor:not-allowed}
+.submit-btn:not(:disabled):active{opacity:.85}
+
+/* WORD BANK */
+.wb-bank{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:14px}
+.wb-chip{padding:11px 24px;border:2px solid var(--pr);border-radius:100px;
+  background:var(--pr-l);color:var(--pr);font-size:19px;font-weight:900;
+  cursor:pointer;transition:all .15s;min-width:64px;text-align:center}
+.wb-chip:active{transform:scale(.92);background:var(--pr);color:#fff}
+.wb-chip:disabled{opacity:.38;cursor:not-allowed}
+.wb-nothing{font-size:11px;display:block;font-weight:600;opacity:.7;margin-top:1px}
+
+/* ODD ONE OUT */
+.ooo-lbl{font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;
+  color:var(--sky);text-align:center;margin-bottom:12px}
+.ooo-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ooo-btn{padding:16px 10px;border:2px solid var(--border);border-radius:13px;
+  background:#fff;font-size:15px;font-weight:700;cursor:pointer;text-align:center;transition:all .15s}
+.ooo-btn:active{transform:scale(.95)}
+.ooo-btn.ok{border-color:var(--ok)!important;background:var(--ok-l)!important;color:#065f46!important}
+.ooo-btn.ng{border-color:var(--err)!important;background:var(--err-l)!important;color:#991b1b!important}
+.ooo-btn.dim{opacity:.3;cursor:not-allowed}
+.ooo-btn:disabled{cursor:not-allowed}
+
+/* MATCHING */
+.match-counter{text-align:center;font-size:13px;font-weight:700;color:var(--muted);margin-bottom:10px}
+.match-counter span{color:var(--ok);font-size:16px}
+.match-wrap{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.match-col{display:flex;flex-direction:column;gap:8px}
+.match-btn{padding:14px 6px;border:2px solid var(--border);border-radius:13px;
+  background:#fff;font-size:24px;cursor:pointer;text-align:center;transition:all .2s;
+  font-weight:700;min-height:56px;display:flex;align-items:center;justify-content:center}
+.match-btn.word{font-size:14px;line-height:1.3}
+.match-btn:active:not(:disabled){transform:scale(.94)}
+.match-btn.sel{border-color:var(--blue);background:var(--blue-l);box-shadow:0 0 0 3px rgba(37,99,235,.18)}
+.match-btn.matched{border-color:var(--ok);background:var(--ok-l);cursor:default;opacity:.7}
+.match-btn.matched.word{color:#065f46}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-9px)}50%{transform:translateX(7px)}80%{transform:translateX(-4px)}}
+.match-btn.wrong{animation:shake .35s ease;border-color:var(--err)!important;background:var(--err-l)!important}
+
+/* TYPING */
+.emoji-big{font-size:88px;text-align:center;line-height:1;margin:6px 0 4px}
+.hint-lbl{text-align:center;font-size:14px;color:var(--muted);margin-bottom:10px}
+.type-inp{width:100%;padding:14px;border:2px solid var(--border);border-radius:13px;
+  font-size:20px;font-weight:700;text-align:center;outline:none;
+  -webkit-user-select:text;user-select:text;transition:border-color .2s;background:#fff}
+.type-inp:focus{border-color:var(--pr)}
+.type-inp.ok{border-color:var(--ok);background:var(--ok-l)}
+.type-inp.ng{border-color:var(--err);background:var(--err-l)}
+
+/* TRUE/FALSE */
+.tf-stmt{font-size:17px;line-height:1.65;font-weight:600;padding:18px 16px;
+  background:var(--sky-l);border-radius:13px;border-left:4px solid var(--sky);
+  margin-bottom:16px;-webkit-user-select:text;user-select:text}
+.tf-btns{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tf-btn{padding:22px 10px;border:2px solid var(--border);border-radius:16px;
+  background:#fff;font-size:17px;font-weight:800;cursor:pointer;transition:all .15s;text-align:center}
+.tf-btn:active{transform:scale(.95)}
+.tf-btn.ok{border-color:var(--ok);background:var(--ok-l);color:#065f46}
+.tf-btn.ng{border-color:var(--err);background:var(--err-l);color:#991b1b}
+.tf-btn:disabled{cursor:not-allowed}
+
+/* READING */
+.read-text{font-size:15px;line-height:1.75;-webkit-user-select:text;user-select:text}
+.read-text p{margin-bottom:14px}
+.read-text p:last-child{margin-bottom:0}
+.rq{border-top:1px solid var(--border);padding-top:16px;margin-top:16px}
+.rq:first-child{border-top:none;padding-top:0;margin-top:0}
+.rq-n{font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--pr);margin-bottom:6px}
+.rq-q{font-size:16px;font-weight:700;margin-bottom:11px;line-height:1.45}
+.read-opt{text-align:left;padding:12px 14px;font-size:14px;font-weight:600}
+
+/* INTRO */
+#screen-intro{min-height:100vh;flex-direction:column;align-items:center;
+  justify-content:flex-start;padding:28px 20px;overflow-y:auto}
+.intro-icon{font-size:56px;text-align:center;margin-bottom:10px;margin-top:6px}
+.intro-h{font-size:26px;font-weight:900;text-align:center;margin-bottom:16px}
+.info-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;
+  width:100%;max-width:400px;margin-bottom:16px}
+.info-box{background:var(--pr-l);border-radius:14px;padding:12px 8px;text-align:center}
+.info-box .ib-v{font-size:24px;font-weight:900;color:var(--pr)}
+.info-box .ib-l{font-size:11px;color:var(--muted);margin-top:2px;font-weight:600}
+.instr-box{width:100%;max-width:400px;background:#fff;border-radius:16px;
+  padding:16px 18px;margin-bottom:16px;box-shadow:var(--shadow);text-align:left}
+.instr-title{font-size:14px;font-weight:800;margin-bottom:10px}
+.instr-list{list-style:none;display:flex;flex-direction:column;gap:8px}
+.instr-list li{font-size:13px;line-height:1.5;color:var(--muted);padding-left:18px;position:relative}
+.instr-list li::before{content:'→';position:absolute;left:0;color:var(--pr);font-weight:700}
+.instr-list li strong{color:var(--text)}
+.name-inp{width:100%;max-width:400px;padding:15px;border:2px solid var(--border);
+  border-radius:14px;font-size:17px;text-align:center;outline:none;margin-bottom:12px;
+  -webkit-user-select:text;user-select:text;background:#fff;font-weight:600}
+.name-inp:focus{border-color:var(--pr)}
+.check-label{display:flex;align-items:flex-start;gap:10px;width:100%;max-width:400px;
+  margin-bottom:16px;cursor:pointer;-webkit-user-select:text;user-select:text}
+.check-label input[type=checkbox]{width:22px;height:22px;flex-shrink:0;margin-top:1px;
+  accent-color:var(--pr);cursor:pointer}
+.check-label span{font-size:13px;line-height:1.5;color:var(--muted)}
+.start-btn{width:100%;max-width:400px;padding:17px;background:var(--pr);color:#fff;
+  border:none;border-radius:14px;font-size:18px;font-weight:800;cursor:pointer;
+  opacity:.4;pointer-events:none;transition:opacity .2s;margin-bottom:24px}
+.start-btn.on{opacity:1;pointer-events:auto}
+.start-btn.on:active{transform:scale(.98)}
+
+/* LOCK */
+#screen-lock{min-height:100vh;flex-direction:column;align-items:center;
+  justify-content:center;padding:28px;text-align:center;background:#0c0a09;color:#fff}
+.lock-icon{font-size:68px;margin-bottom:18px;cursor:pointer}
+.lock-title{font-size:26px;font-weight:900;margin-bottom:8px}
+.lock-reason{font-size:15px;color:#a8a29e;margin-bottom:32px;line-height:1.55}
+.lock-hint{font-size:12px;color:#44403c}
+
+/* RESULTS */
+#screen-results{padding:14px;max-width:480px;margin:0 auto}
+.res-card{background:#fff;border-radius:22px;padding:22px 20px;
+  box-shadow:0 4px 28px rgba(0,0,0,.13);max-height:700px;overflow:hidden}
+.res-logo{font-size:34px;text-align:center;margin-bottom:2px}
+.res-name-test{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--muted);text-align:center;margin-bottom:14px}
+.res-meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.rm{background:var(--bg);border-radius:11px;padding:10px 12px}
+.rm .rk{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:2px}
+.rm .rv{font-size:15px;font-weight:800;word-break:break-word}
+.res-pct-box{text-align:center;border-radius:16px;padding:18px 10px 14px;margin-bottom:12px}
+.res-pct-num{font-size:72px;font-weight:900;line-height:1}
+.res-pct-sub{font-size:14px;margin-top:4px;font-weight:700;color:var(--muted)}
+.res-bar-bg{background:var(--border);border-radius:100px;height:10px;overflow:hidden}
+.res-bar-fill{height:100%;border-radius:100px;width:0%;transition:width 1.1s cubic-bezier(.4,0,.2,1)}
+.res-bar-pct{text-align:right;font-size:13px;font-weight:800;margin-top:4px}
+.res-snap{text-align:center;font-size:13px;color:var(--muted);padding-top:10px;margin-top:10px;border-top:1px solid var(--border)}
+
+.det-section{margin-top:14px;padding-bottom:40px}
+.det-hdr{font-size:12px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+.det-ex{background:#fff;border-radius:16px;padding:16px;margin-bottom:10px;box-shadow:var(--shadow)}
+.det-ex-title{font-size:14px;font-weight:800;margin-bottom:10px;display:flex;justify-content:space-between}
+.det-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:13px}
+.det-row:last-child{border-bottom:none}
+.det-ok{color:var(--ok);font-weight:700}.det-ng{color:var(--err);font-weight:700}
+
+#timesup{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9999;
+  flex-direction:column;align-items:center;justify-content:center;color:#fff;text-align:center;padding:28px}
+#timesup.on{display:flex}
+#timesup h2{font-size:26px;font-weight:900;margin:14px 0 8px}
+#timesup p{font-size:15px;opacity:.7;margin-bottom:24px}
+#timesup button{padding:16px 32px;background:var(--pr);color:#fff;border:none;border-radius:14px;font-size:17px;font-weight:800;cursor:pointer}
+/* PREVIEW */
+#screen-preview{padding:16px;max-width:520px;margin:0 auto;padding-bottom:48px}
+.pv-header{background:var(--primary);color:#fff;border-radius:18px;padding:18px 20px;margin-bottom:16px;text-align:center}
+.pv-header h2{font-size:20px;font-weight:900;margin-bottom:3px}
+.pv-header p{font-size:13px;opacity:.85}
+.pv-ex{background:#fff;border-radius:18px;padding:18px 16px;margin-bottom:14px;box-shadow:var(--shadow)}
+.pv-ex-title{font-size:12px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--primary);margin-bottom:2px}
+.pv-ex-sub{font-size:18px;font-weight:900;margin-bottom:4px}
+.pv-ex-inst{font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5}
+.pv-item{border-top:1px solid var(--border);padding:12px 0}
+.pv-item:first-child{border-top:none;padding-top:0}
+.pv-q{font-size:14px;font-weight:600;margin-bottom:6px;line-height:1.5}
+.pv-ans{display:inline-block;background:var(--ok-l);color:#065f46;border-radius:8px;padding:4px 12px;font-size:14px;font-weight:800;margin-bottom:6px}
+.pv-opts{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+.pv-opt{padding:5px 12px;border-radius:8px;font-size:13px;font-weight:600;background:var(--border);color:var(--muted)}
+.pv-opt.correct{background:var(--ok-l);color:#065f46}
+.pv-match{display:flex;align-items:center;gap:8px;font-size:15px;margin-bottom:4px}
+.pv-match-emoji{font-size:24px}
+.pv-tf-ans{display:inline-block;padding:4px 14px;border-radius:8px;font-weight:800;font-size:14px;margin-bottom:6px}
+.pv-tf-true{background:var(--ok-l);color:#065f46}
+.pv-tf-false{background:var(--err-l);color:#991b1b}
+.pv-reading-text{font-size:14px;line-height:1.7;color:var(--muted);margin-bottom:14px;background:var(--bg);border-radius:12px;padding:14px;-webkit-user-select:text;user-select:text}
+.pv-reading-text p{margin-bottom:10px}
+.pv-reading-text p:last-child{margin-bottom:0}
+</style>
+</head>
+<body>
+
+<div id="screen-intro" class="screen active">
+  <div class="intro-icon">🍽️</div>
+  <h1 class="intro-h">Unit 4 Test – Food <span style="color:var(--pr)">(B)</span></h1>
+  <div class="info-row">
+    <div class="info-box"><div class="ib-v">50</div><div class="ib-l">bodů</div></div>
+    <div class="info-box"><div class="ib-v">40</div><div class="ib-l">minut</div></div>
+    <div class="info-box"><div class="ib-v">6</div><div class="ib-l">cvičení</div></div>
+  </div>
+  <div class="instr-box">
+    <div class="instr-title">📋 Pokyny k testu</div>
+    <ul class="instr-list">
+      <li>Test obsahuje <strong>6 cvičení</strong> za celkem <strong>50 bodů</strong>.</li>
+      <li>Na vypracování máš <strong>40 minut</strong>. Čas začne běžet po stisknutí Start.</li>
+      <li>U každé otázky vyber nebo napiš odpověď a pokračuj tlačítkem <strong>Next</strong>.</li>
+      <li>Cvičení 6 obsahuje text ke čtení — přečti ho pozorně a odpověz na otázky.</li>
+      <li><strong>Nepřepínej záložky ani aplikace</strong> — test se automaticky zamkne.</li>
+      <li><strong>Nezavírej soubor</strong> během testu — zamkne se, budeš potřebovat učitele.</li>
+      <li>Na konci testu uvidíš výsledkovou kartu. <strong>Vyfotografuj ji a pošli učiteli.</strong></li>
+    </ul>
+  </div>
+  <input class="name-inp" id="name-inp" type="text" placeholder="Celé jméno a příjmení"
+    autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false">
+  <label class="check-label">
+    <input type="checkbox" id="agree-chk">
+    <span>Přečetl/a jsem pokyny a beru na vědomí podmínky testu.</span>
+  </label>
+  <button class="start-btn" id="start-btn">Spustit test →</button>
+</div>
+
+<div id="screen-test" class="screen">
+  <div id="hdr">
+    <div id="hdr-prog">Načítání…</div>
+    <div id="hdr-timer">40:00</div>
+  </div>
+  <div id="ex-area"></div>
+</div>
+
+<div id="screen-preview" class="screen"></div>
+
+<div id="screen-lock" class="screen">
+  <div class="lock-icon" id="lock-icon">🔒</div>
+  <h2 class="lock-title">Test uzamčen</h2>
+  <p class="lock-reason" id="lock-reason">Opustil/a jsi test.</p>
+  <p class="lock-hint">Kontaktuj učitele pro odemčení.</p>
+</div>
+
+<div id="screen-results" class="screen">
+  <div class="res-card">
+    <div class="res-logo">🍽️</div>
+    <div class="res-name-test">Unit 4 Test – Food (B)</div>
+    <div class="res-meta">
+      <div class="rm"><div class="rk">Student</div><div class="rv" id="r-name">–</div></div>
+      <div class="rm"><div class="rk">Test ID</div><div class="rv" id="r-id">–</div></div>
+      <div class="rm"><div class="rk">Odevzdáno</div><div class="rv" id="r-time">–</div></div>
+      <div class="rm"><div class="rk">Body</div><div class="rv" id="r-score">–</div></div>
+    </div>
+    <div class="res-pct-box" id="r-pct-box">
+      <div class="res-pct-num" id="r-pct-num">–</div>
+      <div class="res-pct-sub" id="r-pct-sub">–</div>
+    </div>
+    <div class="res-bar-bg"><div class="res-bar-fill" id="r-bar"></div></div>
+    <div class="res-bar-pct" id="r-pct-lbl">0%</div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin:10px 0 6px">
+      <div style="font-size:13px;font-weight:700;color:var(--muted)">Známka:</div>
+      <div id="r-grade" style="font-size:42px;font-weight:900;line-height:1"></div>
+      <div id="r-grade-lbl" style="font-size:13px;font-weight:700;color:var(--muted)"></div>
+    </div>
+    <div class="res-snap">📸 Vyfotografuj tuto kartu a pošli ji učiteli.</div>
+  </div>
+  <div style="text-align:center;margin-top:16px;margin-bottom:4px">
+    <button onclick="resetForNextStudent()" style="padding:12px 24px;background:#fff;color:var(--muted);border:2px solid var(--border);border-radius:13px;font-size:14px;font-weight:700;cursor:pointer">🔄 Reset pro nového studenta</button>
+  </div>
+  <div class="det-section" id="det-section"></div>
+</div>
+
+<div id="timesup">
+  <div style="font-size:64px">⏰</div>
+  <h2>Čas vypršel!</h2>
+  <p>Tvoje odpovědi byly automaticky odeslány.</p>
+  <button onclick="showResults()">Zobrazit výsledky →</button>
+</div>
+
+<script>
+const VERSION='v5.1B';
+
+const EX=[
+  {id:1,title:'Exercise 1',sub:'Fill in the Gap',type:'wordbank',max:8,
+   inst:'Tap a word from the bank to fill the gap with the correct article.',
+   bank:['a','an','the','–'],
+   items:[
+    {sp:'Customer',  before:'Excuse me, I need',       after:'egg for my recipe.',             ans:'an'},
+    {sp:'Shopkeeper',before:"Here you go. It's",       after:'fresh egg from today.',           ans:'a'},
+    {sp:'Customer',  before:'Do you have',             after:'avocado?',                        ans:'an'},
+    {sp:'Shopkeeper',before:'Yes,',                    after:'avocado is just over there.',     ans:'the'},
+    {sp:'Customer',  before:"I'd also like",           after:'bread, please.',                  ans:'–'},
+    {sp:'Shopkeeper',before:"Here's",                  after:'loaf of wholemeal bread.',        ans:'a'},
+    {sp:'Customer',  before:'How much is',             after:'bread?',                          ans:'the'},
+    {sp:'Shopkeeper',before:'',                        after:'bread is £1.50.',                 ans:'The',bank:['A','An','The','–']}
+  ]},
+  {id:2,title:'Exercise 2',sub:'Odd One Out',type:'oddoneout',max:8,
+   inst:"Which word doesn't belong? Tap the odd one out.",
+   items:[
+    {opts:['chicken','pork','beef','lemonade'],    ans:'lemonade', why:"Lemonade is a drink, not a meat."},
+    {opts:['carrot','broccoli','grape','pepper'],  ans:'grape',    why:"Grape is a fruit, not a vegetable."},
+    {opts:['milk','water','juice','mushroom'],     ans:'mushroom', why:"Mushroom is not a drink."},
+    {opts:['some','any','much','butter'],          ans:'butter',   why:"Butter is not a quantifier."},
+    {opts:['egg','cheese','butter','cola'],        ans:'cola',     why:"Cola is not a dairy product."},
+    {opts:['fork','knife','glass','salmon'],       ans:'salmon',   why:"Salmon is not cutlery."},
+    {opts:['a few','a little','many','pasta'],     ans:'pasta',    why:"Pasta is not a quantifier."},
+    {opts:['grapes','apricot','mango','flour'],    ans:'flour',    why:"Flour is not a fruit."}
+  ]},
+  {id:3,title:'Exercise 3',sub:'Match the Food',type:'matching',max:6,
+   inst:'Tap a food picture, then tap its name to make a pair.',
+   items:[
+    {emoji:'🍎',word:'apple'},{emoji:'🥦',word:'broccoli'},{emoji:'🍋',word:'lemon'},
+    {emoji:'🥚',word:'egg'}, {emoji:'🐟',word:'fish'},    {emoji:'🥑',word:'avocado'}
+  ]},
+  {id:4,title:'Exercise 4',sub:'What food is it?',type:'typing',max:8,
+   inst:'Look at the picture. Type the name of the food or drink.',
+   items:[
+    {emoji:'🍌',hint:'b',  ans:'banana'},     {emoji:'🧄',hint:'g',  ans:'garlic'},
+    {emoji:'🍓',hint:'s',  ans:'strawberry'}, {emoji:'🥩',hint:'b',  ans:'beef'},
+    {emoji:'🍞',hint:'b',  ans:'bread'},      {emoji:'🥛',hint:'m',  ans:'milk'},
+    {emoji:'🍄',hint:'m',  ans:'mushroom'},   {emoji:'🥕',hint:'c',  ans:'carrot'}
+  ]},
+  {id:5,title:'Exercise 5',sub:'True or False?',type:'truefalse',max:10,
+   inst:'Is the statement correct? Tap True or False.',
+   items:[
+    {s:'Lamb is a type of fish.',                        ans:false},
+    {s:'Broccoli is a vegetable.',                       ans:true},
+    {s:'"How many" is used with countable nouns.',       ans:true},
+    {s:'You can say "a milk" in English.',               ans:false},
+    {s:'An avocado is a type of fruit.',                 ans:true},
+    {s:'"A little" is used with countable nouns.',       ans:false},
+    {s:'Rice is uncountable in English.',                ans:true},
+    {s:'Chicken is a type of vegetable.',                ans:false},
+    {s:'Garlic is commonly used in cooking.',            ans:true},
+    {s:'We use "a few" with uncountable nouns.',         ans:false}
+  ]},
+  {id:6,title:'Exercise 6',sub:'Reading Comprehension',type:'reading',max:10,
+   text:[
+    "My name is Sam. I'm nineteen years old and I study at a college in London. I love cooking and I write a food blog called Student Kitchen. I post three new recipes every week. My favourite foods are pasta, rice and vegetables. I don't eat meat, but I eat fish sometimes.",
+    "I usually cook dinner at home because restaurants are expensive. My favourite dish is pasta with tomato sauce and cheese. I buy my food at the local market every Saturday morning. The market opens at eight o'clock and closes at two o'clock. I always buy fresh vegetables, fruit and sometimes fish there.",
+    "Last week I made a vegetable soup for my flatmates. I used carrots, onions, garlic, pepper and a little flour to make it thick. My flatmates loved the soup. They said it was the best soup they had ever eaten.",
+    "This weekend I want to try a new recipe with salmon and lemon. I read about it on another food blog. I think it will be delicious."
+   ],
+   items:[
+    {q:"What is the name of Sam's food blog?",
+     opts:['London Kitchen','Student Kitchen','Cook at Home'],ans:1},
+    {q:'How often does Sam post new recipes?',
+     opts:['Every day','Three times a week','Once a week'],ans:1},
+    {q:'Where does Sam buy food?',
+     opts:['At a supermarket','At a restaurant','At the local market'],ans:2},
+    {q:'What did Sam make last week?',
+     opts:['Pasta with cheese','Vegetable soup','Salmon with lemon'],ans:1},
+    {q:'What does Sam want to cook this weekend?',
+     opts:['Vegetable soup','Tomato pasta','Salmon with lemon'],ans:2}
+  ]}
+];
+
+const P='u4b_',LS={ver:P+'ver',name:P+'nm',id:P+'id',start:P+'st',answers:P+'ans',xi:P+'xi',
+  qi:P+'qi',done:P+'done',locked:P+'lk',lkr:P+'lkr',secs:P+'secs',rAns:P+'rans',rSub:P+'rsub'};
+const SS='u4b_sess',PW='UCITEL';
+let S={name:'',testId:'',startTime:0,secs:40*60,tiv:null,xi:0,qi:0,
+  answers:EX.map(()=>[]),done:false,locked:false,lkr:'',rAns:{},rSub:false,lkClicks:0,lkTimer:null};
+let MS={selLeft:null,matched:new Set(),firstTried:{},words:[]};
+
+function purge(){Object.values(LS).forEach(k=>localStorage.removeItem(k));sessionStorage.removeItem(SS);}
+function save(){
+  localStorage.setItem(LS.ver,VERSION);localStorage.setItem(LS.name,S.name);
+  localStorage.setItem(LS.id,S.testId);localStorage.setItem(LS.start,S.startTime);
+  localStorage.setItem(LS.answers,JSON.stringify(S.answers));localStorage.setItem(LS.xi,S.xi);
+  localStorage.setItem(LS.qi,S.qi);localStorage.setItem(LS.done,S.done);
+  localStorage.setItem(LS.locked,S.locked);localStorage.setItem(LS.lkr,S.lkr);
+  localStorage.setItem(LS.secs,S.secs);localStorage.setItem(LS.rAns,JSON.stringify(S.rAns));
+  localStorage.setItem(LS.rSub,S.rSub);
+}
+function load(){
+  S.name=localStorage.getItem(LS.name)||'';S.testId=localStorage.getItem(LS.id)||'';
+  S.startTime=parseInt(localStorage.getItem(LS.start)||'0');
+  S.answers=JSON.parse(localStorage.getItem(LS.answers)||JSON.stringify(EX.map(()=>[])));
+  S.xi=parseInt(localStorage.getItem(LS.xi)||'0');S.qi=parseInt(localStorage.getItem(LS.qi)||'0');
+  S.done=localStorage.getItem(LS.done)==='true';S.locked=localStorage.getItem(LS.locked)==='true';
+  S.lkr=localStorage.getItem(LS.lkr)||'';S.secs=parseInt(localStorage.getItem(LS.secs)||(40*60)+'');
+  S.rAns=JSON.parse(localStorage.getItem(LS.rAns)||'{}');S.rSub=localStorage.getItem(LS.rSub)==='true';
+}
+function genId(){const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',r=()=>c[Math.floor(Math.random()*c.length)];return r()+r()+'-'+r()+r()+'-'+r()+r()+r();}
+function pad(n){return String(n).padStart(2,'0')}
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0);}
+
+// INTRO
+const nameInp=document.getElementById('name-inp'),startBtn=document.getElementById('start-btn'),agreeChk=document.getElementById('agree-chk');
+function checkReady(){startBtn.classList.toggle('on',nameInp.value.trim().length>=3&&agreeChk.checked);}
+nameInp.addEventListener('input',checkReady);agreeChk.addEventListener('change',checkReady);
+startBtn.addEventListener('click',()=>{
+  const nm=nameInp.value.trim();if(nm.length<3||!agreeChk.checked)return;
+  if(nm.toLowerCase()==='daniel baláž'){showPreview();return;}
+  S.name=nm;S.testId=genId();S.startTime=Date.now();S.secs=40*60;
+  sessionStorage.setItem(SS,'active');save();show('screen-test');render();startTimer();
+});
+
+function showPreview(){
+  const area=document.getElementById('screen-preview');
+  let h=`<div class="pv-header"><h2>🔍 Teacher Preview</h2><p>Unit 4 Test – Food · Všechny otázky a správné odpovědi</p></div>`;
+  EX.forEach(ex=>{
+    h+=`<div class="pv-ex"><div class="pv-ex-title">${ex.title} · ${ex.max} pts</div><div class="pv-ex-sub">${ex.sub}</div><div class="pv-ex-inst">${ex.inst}</div>`;
+    if(ex.type==='wordbank'){
+      ex.items.forEach((it,i)=>{
+        const sent=(it.before?it.before+' ':'')+'<span class="pv-ans">'+it.ans+'</span> '+it.after;
+        h+=`<div class="pv-item"><div class="pv-q">${i+1}. ${it.sp}: ${sent}</div></div>`;
+      });
+    } else if(ex.type==='oddoneout'){
+      ex.items.forEach((it,i)=>{
+        const opts=it.opts.map(o=>`<span class="pv-opt${o===it.ans?' correct':''}">${o}</span>`).join('');
+        h+=`<div class="pv-item"><div class="pv-q">${i+1}. ${it.opts.join(' / ')}</div><div class="pv-opts">${opts}</div></div>`;
+      });
+    } else if(ex.type==='matching'){
+      ex.items.forEach(it=>{
+        h+=`<div class="pv-item"><div class="pv-match"><span class="pv-match-emoji">${it.emoji}</span><span>→</span><span class="pv-ans">${it.word}</span></div></div>`;
+      });
+    } else if(ex.type==='typing'){
+      ex.items.forEach((it,i)=>{
+        h+=`<div class="pv-item"><div class="pv-q">${i+1}. ${it.emoji} &nbsp;[${it.hint.toUpperCase()}…] → <span class="pv-ans">${it.ans}</span></div></div>`;
+      });
+    } else if(ex.type==='truefalse'){
+      ex.items.forEach((it,i)=>{
+        const cl=it.ans?'pv-tf-true':'pv-tf-false';
+        h+=`<div class="pv-item"><div class="pv-q">${i+1}. ${it.s}</div><div class="pv-tf-ans ${cl}">${it.ans?'TRUE':'FALSE'}</div></div>`;
+      });
+    } else if(ex.type==='reading'){
+      h+=`<div class="pv-reading-text">${ex.text.map(p=>'<p>'+p+'</p>').join('')}</div>`;
+      ex.items.forEach((it,i)=>{
+        const ltr=['A','B','C'];
+        const opts=it.opts.map((o,oi)=>`<span class="pv-opt${oi===it.ans?' correct':''}">${ltr[oi]}. ${o}</span>`).join('');
+        h+=`<div class="pv-item"><div class="pv-q">${i+1}. ${it.q}</div><div class="pv-opts">${opts}</div></div>`;
+      });
+    }
+    h+='</div>';
+  });
+  area.innerHTML=h;
+  show('screen-preview');
+}
+
+// TIMER
+function startTimer(){
+  clearInterval(S.tiv);updateTimer();
+  S.tiv=setInterval(()=>{S.secs--;save();updateTimer();
+    if(S.secs<=0){clearInterval(S.tiv);document.getElementById('timesup').classList.add('on');}},1000);
+}
+function updateTimer(){const m=Math.floor(S.secs/60),s=S.secs%60,el=document.getElementById('hdr-timer');el.textContent=pad(m)+':'+pad(s);el.className=S.secs<=60?'danger':S.secs<=300?'warn':'';}
+function updateProg(){const done=S.answers.reduce((a,b)=>a+b.length,0),total=EX.reduce((a,e)=>a+(e.items||[]).length,0);document.getElementById('hdr-prog').textContent=`Cvičení ${Math.min(S.xi+1,EX.length)} / ${EX.length} · ${done}/${total}`;}
+
+// HEADER
+function hdrHtml(ex){
+  const items=ex.items||[],ans=S.answers[EX.indexOf(ex)]||[];
+  let extra='';
+  if(ex.type==='matching'){
+    extra=`<div class="match-counter"><span id="mc-n">${MS.matched.size}</span> / ${items.length} matched</div>`;
+  } else if(ex.type!=='reading'){
+    const dots=items.map((_,i)=>{let cl='dot';if(i<ans.length)cl+=ans[i].correct?' ok':' ng';else if(i===S.qi)cl+=' cur';return`<div class="${cl}"></div>`;}).join('');
+    extra=`<div class="dots">${dots}</div>`;
+  }
+  return`<div class="card"><div class="ex-label">${ex.title} · ${ex.max} pts</div><div class="ex-title">${ex.sub}</div><div class="ex-inst">${ex.inst}</div>${extra}</div>`;
+}
+
+// RENDER
+function render(){
+  if(S.xi>=EX.length){showResults();return}
+  updateProg();
+  const ex=EX[S.xi],area=document.getElementById('ex-area');
+  ({wordbank:renderWordBank,oddoneout:renderOddOneOut,matching:renderMatching,
+    typing:renderTyping,truefalse:renderTrueFalse,reading:renderReading})[ex.type](ex,area);
+}
+
+// EX1 WORD BANK
+function renderWordBank(ex,area){
+  if(S.qi>=ex.items.length){nextEx();return}
+  const item=ex.items[S.qi],bank=item.bank||ex.bank;
+  const sent=item.before?`${item.before} <span class="gap" id="gap">___</span> ${item.after}`:`<span class="gap" id="gap">___</span>${item.after}`;
+  const chips=bank.map(w=>`<button class="wb-chip" onclick="doWordBank('${w}')">${w==='–'?'–<span class="wb-nothing">nothing</span>':w}</button>`).join('');
+  area.innerHTML=hdrHtml(ex)+`<div class="card"><div class="speaker">${item.sp}</div><div class="qbox"><div class="qtext">${sent}</div></div><div class="wb-bank">${chips}</div><div class="fb" id="fb"></div><button class="next-btn" id="nb" onclick="nextQ()">Next →</button></div>`;
+}
+function doWordBank(v){
+  const item=EX[S.xi].items[S.qi],ok=v===item.ans;record(v,item.ans,ok);
+  document.querySelectorAll('.wb-chip').forEach(b=>b.disabled=true);
+  const g=document.getElementById('gap');if(g){g.textContent=v==='–'?'–':v;g.classList.add(ok?'ok':'ng');}
+  feedback(ok,item.ans==='–'?'– (no article)':item.ans);document.getElementById('nb').style.display='block';
+}
+
+// EX2 ODD ONE OUT
+function renderOddOneOut(ex,area){
+  if(S.qi>=ex.items.length){nextEx();return}
+  const item=ex.items[S.qi];
+  const btns=item.opts.map(o=>`<button class="ooo-btn" data-v="${o}" onclick="doOOO('${o}')">${o}</button>`).join('');
+  area.innerHTML=hdrHtml(ex)+`<div class="card"><div class="ooo-lbl">🔍 Which doesn't belong?</div><div class="ooo-grid">${btns}</div><div class="fb" id="fb"></div><button class="next-btn" id="nb" onclick="nextQ()">Next →</button></div>`;
+}
+function doOOO(v){
+  const item=EX[S.xi].items[S.qi],ok=v===item.ans;record(v,item.ans,ok);
+  document.querySelectorAll('.ooo-btn').forEach(b=>{b.disabled=true;if(b.dataset.v===item.ans)b.classList.add('ok');else if(b.dataset.v===v&&!ok)b.classList.add('ng');else b.classList.add('dim');});
+  const fb=document.getElementById('fb');if(fb){fb.style.display='block';fb.className='fb '+(ok?'ok':'ng');fb.textContent=ok?'✓ Correct! '+item.why:'✗ The odd one out is "'+item.ans+'". '+item.why;}
+  document.getElementById('nb').style.display='block';
+}
+
+// EX3 MATCHING
+function renderMatching(ex,area){
+  const words=[...ex.items.map(i=>i.word)].sort(()=>Math.random()-.5);
+  MS={selLeft:null,matched:new Set(),firstTried:{},words};
+  const lc=ex.items.map((it,i)=>`<button class="match-btn" id="ml-${i}" onclick="matchL(${i})">${it.emoji}</button>`).join('');
+  const rc=words.map((w,j)=>`<button class="match-btn word" id="mr-${j}" onclick="matchR(${j})">${w}</button>`).join('');
+  area.innerHTML=hdrHtml(ex)+`<div class="card"><div class="match-wrap"><div class="match-col">${lc}</div><div class="match-col">${rc}</div></div><div class="fb" id="fb"></div></div>`;
+}
+function matchL(i){
+  if(MS.matched.has(i))return;
+  document.querySelectorAll('.match-btn:not(.word)').forEach(b=>b.classList.remove('sel'));
+  MS.selLeft=i;document.getElementById('ml-'+i).classList.add('sel');
+}
+function matchR(j){
+  if(MS.selLeft===null)return;
+  const ex=EX[S.xi],i=MS.selLeft,picked=MS.words[j],correct=ex.items[i].word;
+  if(!MS.firstTried.hasOwnProperty(i))MS.firstTried[i]=picked===correct;
+  if(picked===correct){
+    MS.matched.add(i);
+    const ml=document.getElementById('ml-'+i),mr=document.getElementById('mr-'+j);
+    ml.classList.remove('sel','wrong');ml.classList.add('matched');ml.disabled=true;
+    mr.classList.add('matched');mr.disabled=true;MS.selLeft=null;
+    const mc=document.getElementById('mc-n');if(mc)mc.textContent=MS.matched.size;
+    if(MS.matched.size===ex.items.length){
+      ex.items.forEach((_,idx)=>record(ex.items[idx].word,ex.items[idx].word,MS.firstTried[idx]!==false));
+      const fb=document.getElementById('fb');if(fb){fb.style.display='block';fb.className='fb ok';fb.textContent='✓ All pairs matched!';}
+      setTimeout(()=>nextEx(),1300);
+    }
+  }else{
+    const ml=document.getElementById('ml-'+i),mr=document.getElementById('mr-'+j);
+    ml.classList.add('wrong');mr.classList.add('wrong');
+    setTimeout(()=>{ml?.classList.remove('wrong','sel');mr?.classList.remove('wrong');MS.selLeft=null;},420);
+  }
+}
+
+// EX4 TYPING
+function renderTyping(ex,area){
+  if(S.qi>=ex.items.length){nextEx();return}
+  const item=ex.items[S.qi];
+  area.innerHTML=hdrHtml(ex)+`<div class="card"><div class="emoji-big">${item.emoji}</div>${item.note?`<div class="hint-lbl" style="font-style:italic">${item.note}</div>`:''}<div class="hint-lbl">First letter(s): <strong>${item.hint.toUpperCase()}</strong></div><input class="type-inp" id="ti" type="text" placeholder="Type here…" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" maxlength="20"><div class="fb" id="fb"></div><button class="submit-btn" id="sb" onclick="doTyping()">Check ✓</button><button class="next-btn" id="nb" onclick="nextQ()">Next →</button></div>`;
+  const inp=document.getElementById('ti');inp.focus();inp.addEventListener('keydown',e=>{if(e.key==='Enter')doTyping();});
+}
+function doTyping(){
+  const item=EX[S.xi].items[S.qi],inp=document.getElementById('ti'),v=inp.value.trim();
+  if(!v)return;const ok=v.toLowerCase()===item.ans.toLowerCase();
+  record(v,item.ans,ok);inp.disabled=true;inp.classList.add(ok?'ok':'ng');
+  document.getElementById('sb').style.display='none';feedback(ok,item.ans);document.getElementById('nb').style.display='block';
+}
+
+// EX5 TRUE/FALSE
+function renderTrueFalse(ex,area){
+  if(S.qi>=ex.items.length){nextEx();return}
+  const item=ex.items[S.qi];
+  area.innerHTML=hdrHtml(ex)+`<div class="card"><div class="tf-stmt">${item.s}</div><div class="tf-btns"><button class="tf-btn" id="tf-T" onclick="doTF(true)">✓ True</button><button class="tf-btn" id="tf-F" onclick="doTF(false)">✗ False</button></div><div class="fb" id="fb"></div><button class="next-btn" id="nb" onclick="nextQ()">Next →</button></div>`;
+}
+function doTF(v){
+  const item=EX[S.xi].items[S.qi],ok=v===item.ans;record(v?'True':'False',item.ans?'True':'False',ok);
+  ['tf-T','tf-F'].forEach(id=>document.getElementById(id).disabled=true);
+  document.getElementById(item.ans?'tf-T':'tf-F').classList.add('ok');
+  if(!ok)document.getElementById(v?'tf-T':'tf-F').classList.add('ng');
+  feedback(ok,item.ans?'True':'False');document.getElementById('nb').style.display='block';
+}
+
+// EX6 READING
+function renderReading(ex,area){
+  const textHtml=ex.text.map(p=>`<p>${p}</p>`).join('');
+  const qsHtml=ex.items.map((q,qi)=>{
+    const ltr=['A','B','C'];
+    return`<div class="rq"><div class="rq-n">Question ${qi+1}</div><div class="rq-q">${q.q}</div><div class="opts g1">${q.opts.map((o,oi)=>`<button class="opt read-opt" data-qi="${qi}" data-oi="${oi}" onclick="pickRead(${qi},${oi})"><strong>${ltr[oi]}.</strong> ${o}</button>`).join('')}</div></div>`;
+  }).join('');
+  area.innerHTML=`<div class="card"><div class="ex-label">${ex.title} · ${ex.max} pts</div><div class="ex-title">${ex.sub}</div><div class="ex-inst">Přečti text pozorně a odpověz na všechny otázky.</div><div class="read-text">${textHtml}</div></div><div class="card">${qsHtml}<button class="submit-btn" id="rsub" onclick="submitReading()" disabled>Odeslat odpovědi</button></div>`;
+  Object.entries(S.rAns).forEach(([qi,oi])=>{const b=document.querySelector(`.opt[data-qi="${qi}"][data-oi="${oi}"]`);if(b)b.classList.add('sel');});
+  if(S.rSub){markReading(ex);const btn=document.getElementById('rsub');if(btn){btn.textContent='Zobrazit výsledky →';btn.disabled=false;btn.onclick=showResults;}}
+  else checkRSub();
+}
+function pickRead(qi,oi){if(S.rSub)return;document.querySelectorAll(`.opt[data-qi="${qi}"]`).forEach(b=>b.classList.remove('sel'));document.querySelector(`.opt[data-qi="${qi}"][data-oi="${oi}"]`).classList.add('sel');S.rAns[qi]=oi;save();checkRSub();}
+function checkRSub(){const btn=document.getElementById('rsub');if(btn)btn.disabled=Object.keys(S.rAns).length<EX[S.xi].items.length;}
+function submitReading(){const ex=EX[S.xi];S.rSub=true;ex.items.forEach((q,qi)=>{const ch=S.rAns[qi];record(q.opts[ch]||'–',q.opts[q.ans],ch===q.ans);});save();markReading(ex);const btn=document.getElementById('rsub');if(btn){btn.textContent='Zobrazit výsledky →';btn.disabled=false;btn.onclick=showResults;}}
+function markReading(ex){ex.items.forEach((q,qi)=>{const ch=S.rAns[qi];document.querySelectorAll(`.opt[data-qi="${qi}"]`).forEach(b=>{b.disabled=true;const oi=parseInt(b.dataset.oi);if(oi===q.ans)b.classList.add('ok');if(oi===ch&&oi!==q.ans)b.classList.add('ng');});});}
+
+// NAV
+function record(given,ans,correct){S.answers[S.xi].push({given,ans,correct});save();}
+function feedback(ok,correct){const fb=document.getElementById('fb');if(!fb)return;fb.style.display='block';fb.className='fb '+(ok?'ok':'ng');fb.textContent=ok?'✓ Correct!':'✗ Correct answer: '+correct;}
+function nextQ(){S.qi++;if(S.qi>=(EX[S.xi].items||[]).length)nextEx();else{save();render();}}
+function nextEx(){S.xi++;S.qi=0;S.rAns={};S.rSub=false;save();if(S.xi>=EX.length)showResults();else{render();window.scrollTo(0,0);}}
+
+function calcGrade(pct){
+  if(pct>=90)return{g:'1',lbl:'výborný'};
+  if(pct>=75)return{g:'2',lbl:'chvalitebný'};
+  if(pct>=50)return{g:'3',lbl:'dobrý'};
+  if(pct>=25)return{g:'4',lbl:'dostatečný'};
+  return{g:'5',lbl:'nedostatečný'};
+}
+function resetForNextStudent(){
+  const pw=prompt('Zadej učitelské heslo pro reset:');
+  if(!pw)return;
+  if(pw.trim().toUpperCase()===PW){purge();show('screen-intro');}
+  else alert('Nesprávné heslo.');
+}
+// RESULTS
+function calcScore(){let pts=0,max=EX.reduce((a,e)=>a+e.max,0);S.answers.forEach((arr,xi)=>{const ex=EX[xi],items=ex.items||[];if(!items.length)return;pts+=Math.round((arr.filter(a=>a.correct).length/items.length)*ex.max);});return{pts,max};}
+function showResults(){
+  clearInterval(S.tiv);S.done=true;save();document.getElementById('timesup').classList.remove('on');
+  const{pts,max}=calcScore(),pct=Math.round((pts/max)*100),col=pct>=75?'#059669':pct>=50?'#d97706':'#dc2626';
+  const now=new Date(),ts=now.toLocaleDateString('cs-CZ')+' '+now.toTimeString().slice(0,5);
+  document.getElementById('r-name').textContent=S.name;document.getElementById('r-id').textContent=S.testId;
+  document.getElementById('r-time').textContent=ts;document.getElementById('r-score').textContent=pts+' / '+max+' bodů';
+  const box=document.getElementById('r-pct-box');box.style.background=col+'18';
+  document.getElementById('r-pct-num').textContent=pct+'%';document.getElementById('r-pct-num').style.color=col;
+  document.getElementById('r-pct-sub').textContent=pts+' z '+max+' bodů';
+  setTimeout(()=>{document.getElementById('r-bar').style.width=pct+'%';document.getElementById('r-bar').style.background=col;document.getElementById('r-pct-lbl').textContent=pct+'%';document.getElementById('r-pct-lbl').style.color=col;},120);
+  const grade=calcGrade(pct);
+  document.getElementById('r-grade').textContent=grade.g;
+  document.getElementById('r-grade').style.color=col;
+  document.getElementById('r-grade-lbl').textContent=grade.lbl;
+  buildDetail();show('screen-results');sessionStorage.removeItem(SS);
+}
+function buildDetail(){
+  let h='<div class="det-hdr">Podrobné výsledky</div>';
+  EX.forEach((ex,xi)=>{
+    const arr=S.answers[xi]||[],items=ex.items||[],cor=arr.filter(a=>a.correct).length,pts=Math.round((cor/Math.max(items.length,1))*ex.max);
+    const rows=arr.map((a,i)=>{const it=items[i],lbl=it?(it.emoji||it.s||'Q'+(i+1)).replace(/<[^>]+>/g,'').slice(0,26):'Q'+(i+1);return`<div class="det-row"><span style="flex:1;padding-right:8px;color:var(--muted)">${lbl}</span><span class="${a.correct?'det-ok':'det-ng'}">${a.correct?'✓ '+a.given:'✗ '+a.given+' → '+a.ans}</span></div>`;}).join('');
+    h+=`<div class="det-ex"><div class="det-ex-title"><span>${ex.title}: ${ex.sub}</span><span style="color:${pts===ex.max?'var(--ok)':'var(--muted)'}">${pts}/${ex.max}</span></div>${rows}</div>`;
+  });
+  document.getElementById('det-section').innerHTML=h;
+}
+
+// LOCK
+function lock(reason){if(S.done)return;S.locked=true;S.lkr=reason;save();clearInterval(S.tiv);document.getElementById('lock-reason').textContent=reason;show('screen-lock');}
+function unlock(){const pw=prompt('Zadej učitelské heslo:');if(!pw)return;if(pw.trim().toUpperCase()===PW){S.locked=false;S.lkr='';localStorage.setItem(LS.locked,'false');sessionStorage.setItem(SS,'active');show('screen-test');render();startTimer();}else alert('Nesprávné heslo.');}
+document.getElementById('lock-icon').addEventListener('click',()=>{S.lkClicks++;clearTimeout(S.lkTimer);S.lkTimer=setTimeout(()=>S.lkClicks=0,3000);if(S.lkClicks>=5){S.lkClicks=0;unlock();}});
+
+// SECURITY
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&!S.done)lock('Přepnul/a jsi záložku nebo aplikaci.');});
+document.addEventListener('contextmenu',e=>e.preventDefault());
+document.addEventListener('keydown',e=>{if(e.key==='F12'||(e.ctrlKey&&['s','u','i','a','p'].includes(e.key.toLowerCase()))||(e.ctrlKey&&e.shiftKey&&['i','j','c'].includes(e.key.toLowerCase())))e.preventDefault();});
+document.addEventListener('selectstart',e=>{if(e.target.tagName!=='INPUT'&&e.target.tagName!=='TEXTAREA'&&!e.target.closest('.read-text'))e.preventDefault();});
+window.addEventListener('beforeunload',e=>{if(!S.done){e.preventDefault();e.returnValue='';}});
+
+// BOOT
+(function boot(){
+  if(localStorage.getItem(LS.ver)!==VERSION)purge();
+  load();const ssOn=sessionStorage.getItem(SS)==='active';
+  if(S.done){showResults();return}
+  if(S.locked){document.getElementById('lock-reason').textContent=S.lkr||'Test uzamčen.';show('screen-lock');return}
+  if(S.testId&&!ssOn){lock('Soubor byl zavřen a znovu otevřen.');return}
+  if(S.testId&&ssOn){show('screen-test');render();startTimer();return}
+  show('screen-intro');
+})();
+</script>
+</body>
+</html>
