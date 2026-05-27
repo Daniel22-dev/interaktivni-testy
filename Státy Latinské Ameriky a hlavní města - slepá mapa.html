@@ -1,0 +1,1190 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Slepá mapa – Latinská Amerika</title>
+<style>
+:root{
+  --gold:#f0c030;--navy:#0d1e35;--dark:#07121f;
+  --ok:#2a7a2a;--bad:#8a1c1c;--ok-lt:#7ec87e;--bad-lt:#e07070;
+  --ok-bg:#d4edda;--bad-bg:#f8d7da
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{
+  height:100%;background:var(--dark);
+  font-family:'Segoe UI',Arial,sans-serif;color:#eee;
+  -webkit-tap-highlight-color:transparent;overscroll-behavior:none
+}
+#hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  background:#040e1a;padding:10px 16px;
+  box-shadow:0 2px 14px rgba(0,0,0,.8);position:sticky;top:0;z-index:10
+}
+#hdr-title{
+  color:var(--gold);font-size:1rem;letter-spacing:1px;font-weight:bold;
+  font-family:Georgia,'Times New Roman',serif
+}
+#hdr-prog{color:#8ab;font-size:.8rem;white-space:nowrap}
+#lock-btn{
+  background:none;border:2px solid #334;border-radius:6px;
+  padding:4px 10px;cursor:pointer;color:#667;font-size:1rem;transition:all .2s
+}
+#lock-btn:hover,#lock-btn:active{border-color:var(--gold);color:var(--gold)}
+#map-wrap{display:flex;justify-content:center;padding:8px 6px;overflow:hidden;position:relative;cursor:grab;touch-action:none}
+#map{
+  width:100%;max-width:700px;height:auto;
+  filter:drop-shadow(0 8px 30px rgba(0,0,0,.9));
+  user-select:none;-webkit-user-select:none;touch-action:none;
+  transform-origin:0 0;will-change:transform;
+}
+.ctry-sp{transition:fill .25s}
+.ctry-bg{transition:fill .25s}
+.ctry-sel{fill:#f5e87a!important}
+.ctry-ok{fill:var(--ok-lt)!important}
+.ctry-bad{fill:var(--bad-lt)!important}
+.mkr{cursor:pointer}
+.mkr circle.outer{fill:rgba(255,255,255,.15);stroke:none}
+.mkr circle.inner{fill:#fff;stroke:var(--navy);stroke-width:1.5;transition:fill .15s}
+.mkr:hover circle.inner,.mkr:active circle.inner{fill:var(--gold)}
+.mkr-ok circle.inner{fill:var(--ok)!important;stroke:#1a5a1a!important}
+.mkr-bad circle.inner{fill:var(--bad)!important;stroke:#5a1010!important}
+.mkr text{
+  fill:var(--navy);font-size:10px;font-weight:bold;
+  text-anchor:middle;dominant-baseline:central;
+  pointer-events:none;user-select:none;-webkit-user-select:none
+}
+.mkr-ok text,.mkr-bad text{fill:#fff!important}
+/* OVERLAYS */
+.ov{
+  display:none;position:fixed;inset:0;z-index:60;
+  background:rgba(0,0,0,.78);
+  justify-content:center;align-items:flex-start;padding:12px;overflow-y:auto
+}
+.ov.on{display:flex}
+.fullscreen{
+  display:none;position:fixed;inset:0;z-index:160;
+  background:var(--dark);flex-direction:column;align-items:center;
+  justify-content:center;padding:24px;text-align:center;overflow-y:auto
+}
+.fullscreen.on{display:flex}
+.card{
+  background:#fff;color:#111;border-radius:14px;
+  padding:24px 20px;width:100%;max-width:480px;
+  box-shadow:0 14px 60px rgba(0,0,0,.7);
+  animation:pop .28s ease;margin:auto
+}
+.card.wide{max-width:560px}
+@keyframes pop{from{transform:scale(.93) translateY(-8px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}
+.card h2{color:var(--navy);font-size:1.1rem;margin-bottom:14px;font-family:Georgia,'Times New Roman',serif}
+/* WARNING */
+.warn-top{text-align:center;margin-bottom:18px}
+.warn-top .ico{font-size:2.5rem;display:block;margin-bottom:8px}
+.warn-top h2{font-size:1.15rem}
+.warn-top p{color:#666;font-size:.82rem;margin-top:4px}
+.rules{list-style:none;margin-bottom:20px}
+.rules li{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:10px 12px;border-radius:8px;margin-bottom:8px;
+  font-size:.88rem;line-height:1.45;color:#222
+}
+.rules li .ic{font-size:1.1rem;flex-shrink:0;padding-top:1px}
+.rules .no{background:#fdeaea}
+.rules .yes{background:#f0f4f0}
+.agree-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:16px;cursor:pointer}
+.agree-row input{width:20px;height:20px;flex-shrink:0;cursor:pointer;accent-color:var(--navy);margin-top:2px}
+.agree-row span{font-size:.88rem;color:#333;line-height:1.45}
+#btn-start{
+  width:100%;padding:13px;border:none;border-radius:10px;
+  background:#ccc;color:#888;font-size:1rem;font-weight:bold;
+  cursor:not-allowed;transition:background .25s,color .25s;
+  font-family:'Segoe UI',Arial,sans-serif
+}
+#btn-start.rdy{background:var(--navy);color:#fff;cursor:pointer}
+#btn-start.rdy:active{opacity:.85}
+/* QUESTION */
+.q-counter{font-size:.78rem;color:#777;margin-bottom:8px}
+.q-box{
+  background:#f2f5f0;border-left:4px solid var(--gold);
+  border-radius:8px;padding:13px;margin-bottom:14px;
+  font-size:1rem;font-weight:bold;color:#1a2a1a;line-height:1.45
+}
+.card input[type=text]{
+  width:100%;padding:11px 13px;font-size:1rem;
+  border:2px solid #ccc;border-radius:8px;outline:none;
+  font-family:'Segoe UI',Arial,sans-serif;transition:border-color .2s
+}
+.card input[type=text]:focus{border-color:var(--navy)}
+.fb{margin-top:10px;padding:10px 13px;border-radius:8px;font-weight:bold;display:none;font-size:.88rem;line-height:1.4}
+.fb.ok{background:var(--ok-bg);color:#1a4a1a;display:block}
+.fb.bad{background:var(--bad-bg);color:#5a1a1a;display:block}
+.row-btns{display:flex;gap:10px;margin-top:13px}
+.btn{padding:10px 16px;border:none;border-radius:8px;cursor:pointer;font-size:.92rem;font-weight:bold;font-family:'Segoe UI',Arial,sans-serif;transition:opacity .2s}
+.btn:active{opacity:.8}
+.btn-p{background:var(--navy);color:#fff;flex:1}
+.btn-s{background:#ddd;color:#555}
+/* RESULTS */
+.grade-wrap{text-align:center;margin:14px 0 8px}
+.grade-num{font-size:4rem;font-weight:bold;line-height:1;font-family:Georgia,'Times New Roman',serif}
+.g1{color:#1a8a1a}.g2{color:#5a8a1a}.g3{color:#b07020}.g4{color:#b04020}.g5{color:#8a1a1a}
+.grade-lbl{font-size:.92rem;color:#555;margin-top:4px}
+.score-txt{text-align:center;font-size:1rem;margin-bottom:12px;color:#333}
+.r-table{width:100%;border-collapse:collapse;font-size:.8rem;margin:10px 0}
+.r-table th{background:var(--navy);color:#fff;padding:7px 8px;text-align:left}
+.r-table td{padding:7px 8px;border-bottom:1px solid #eee}
+.r-table tr:nth-child(even) td{background:#f7f7f7}
+.row-ok td{color:#1a5a1a}
+.row-bad td{color:#5a1a1a}
+.ss-box{background:linear-gradient(135deg,var(--dark),var(--navy));color:#fff;padding:16px;border-radius:10px;text-align:center;margin-top:16px}
+.ss-box .cam{font-size:2rem;margin-bottom:5px}
+.ss-box h3{color:var(--gold);margin-bottom:5px;font-size:.95rem;font-family:Georgia,'Times New Roman',serif}
+.ss-box p{font-size:.82rem;opacity:.88;line-height:1.5}
+/* DONE */
+#done-ov .big-ico{font-size:3.5rem;margin-bottom:14px}
+#done-ov h2{color:var(--gold);font-size:1.2rem;margin-bottom:10px;font-family:Georgia,'Times New Roman',serif}
+#done-ov p{color:#aab;font-size:.88rem;line-height:1.55;margin-bottom:4px}
+.done-score{color:#fff;font-size:1.4rem;font-weight:bold;margin:14px 0 4px}
+.done-grade{color:var(--gold);font-size:2.8rem;font-weight:bold;font-family:Georgia,'Times New Roman',serif}
+.done-sep{width:60px;height:2px;background:#223;margin:18px auto}
+.done-lbl{color:#667;font-size:.8rem;margin-bottom:8px}
+.reset-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+#done-pass{
+  padding:9px 14px;font-size:.9rem;border-radius:8px;
+  border:2px solid #334;background:#0d1e35;color:#fff;
+  outline:none;text-align:center;letter-spacing:2px;width:180px;
+  font-family:'Courier New',Consolas,monospace
+}
+#done-pass:focus{border-color:var(--gold)}
+.btn-reset{padding:9px 18px;background:var(--gold);border:none;border-radius:8px;font-size:.9rem;cursor:pointer;font-weight:bold;color:var(--dark);font-family:'Segoe UI',Arial,sans-serif}
+#done-err{color:#f88;font-size:.8rem;margin-top:8px;min-height:16px}
+/* LOCK */
+#lock-ov{z-index:200;gap:14px}
+#lock-icon{font-size:4rem;color:var(--gold);cursor:pointer;user-select:none;-webkit-user-select:none;transition:transform .12s}
+#lock-icon:active{transform:scale(.9)}
+#lock-ov h2{color:#fff;font-size:1.2rem;letter-spacing:2px;font-family:Georgia,'Times New Roman',serif}
+#lock-ov .sub{color:#aab;font-size:.85rem;line-height:1.55;max-width:300px}
+#lock-dots{font-size:.85rem;color:var(--gold);min-height:18px;letter-spacing:3px}
+#lock-pass-area{display:none;flex-direction:column;align-items:center;gap:10px;margin-top:4px}
+#lock-pass{
+  padding:10px 18px;font-size:1rem;border-radius:8px;
+  border:2px solid #445;background:#0d1e35;color:#fff;
+  outline:none;text-align:center;letter-spacing:3px;width:220px;
+  font-family:'Courier New',Consolas,monospace
+}
+#lock-pass:focus{border-color:var(--gold)}
+.btn-unlock{padding:10px 28px;background:var(--gold);border:none;border-radius:8px;font-size:1rem;cursor:pointer;font-weight:bold;color:var(--dark);font-family:'Segoe UI',Arial,sans-serif}
+#lock-err{color:#f88;font-size:.82rem;min-height:16px}
+/* TIMER */
+#timer-wrap{
+  display:flex;align-items:center;gap:6px;
+  background:rgba(255,255,255,.08);border-radius:8px;
+  padding:4px 10px;border:1px solid rgba(255,255,255,.12)
+}
+#timer-lbl{font-size:.65rem;color:#8ab;text-transform:uppercase;letter-spacing:.08em}
+#timer-val{
+  font-family:'Courier New',Consolas,monospace;
+  font-size:1.05rem;font-weight:bold;color:#eee;letter-spacing:.05em;
+  transition:color .4s
+}
+#timer-val.warn{color:#f0c030}
+#timer-val.danger{color:#ff5252;animation:timerBlink .7s infinite}
+@keyframes timerBlink{0%,100%{opacity:1}50%{opacity:.35}}
+/* NAME FIELD */
+#name-wrap{margin-bottom:14px}
+#name-wrap label{
+  display:block;font-size:.85rem;font-weight:700;
+  color:#0d1e35;margin-bottom:5px
+}
+#student-name-input{
+  width:100%;padding:10px 13px;font-size:.98rem;
+  border:2px solid #ccc;border-radius:8px;outline:none;
+  font-family:'Segoe UI',Arial,sans-serif;transition:border-color .2s;color:#111
+}
+#student-name-input:focus{border-color:#0d1e35}
+#name-err{color:#c00;font-size:.78rem;margin-top:3px;display:none}
+/* RESULTS — compact, fits one screenshot */
+.res-meta{
+  background:#f0f4f0;border-left:4px solid var(--gold);
+  border-radius:8px;padding:9px 12px;margin-bottom:10px;font-size:.78rem
+}
+.res-meta-row{
+  display:flex;justify-content:space-between;
+  padding:2px 0;color:#333;line-height:1.4
+}
+.res-meta-lbl{color:#666;flex-shrink:0;margin-right:6px}
+.res-meta-val{font-weight:700;text-align:right}
+.res-meta-val.mono{font-family:'Courier New',Consolas,monospace;color:#7b1818;letter-spacing:.06em}
+.grade-wrap{text-align:center;margin:10px 0 6px}
+.grade-num{font-size:3.2rem;font-weight:bold;line-height:1;font-family:Georgia,'Times New Roman',serif}
+.grade-lbl{font-size:.82rem;color:#555;margin-top:2px}
+.score-row{
+  display:flex;align-items:center;gap:10px;
+  margin-bottom:10px;justify-content:center
+}
+.score-txt{font-size:.95rem;color:#333;font-weight:bold;white-space:nowrap}
+.pbar-wrap{flex:1;background:#ddd;border-radius:20px;height:8px;overflow:hidden}
+.pbar-fill{height:100%;background:var(--navy);border-radius:20px;transition:width 1s ease}
+.r-table{width:100%;border-collapse:collapse;font-size:.72rem;margin:6px 0}
+.r-table th{background:var(--navy);color:#fff;padding:5px 6px;text-align:left}
+.r-table td{padding:5px 6px;border-bottom:1px solid #eee;line-height:1.3}
+.r-table tr:nth-child(even) td{background:#f7f7f7}
+.row-ok td{color:#1a5a1a}
+.row-bad td{color:#5a1a1a}
+.ss-box{
+  background:linear-gradient(135deg,var(--dark),var(--navy));
+  color:#fff;padding:11px 14px;border-radius:10px;
+  text-align:center;margin-top:10px
+}
+.ss-box .cam{font-size:1.5rem;margin-bottom:3px}
+.ss-box h3{color:var(--gold);margin-bottom:3px;font-size:.85rem;font-family:Georgia,'Times New Roman',serif}
+.ss-box p{font-size:.75rem;opacity:.88;line-height:1.4}
+</style>
+</head>
+<body>
+
+<div id="hdr">
+  <div id="hdr-title">🌎 Latinská Amerika – Slepá mapa</div>
+  <div id="timer-wrap" style="display:none">
+    <div>
+      <div id="timer-lbl">Zbývá</div>
+      <div id="timer-val">15:00</div>
+    </div>
+  </div>
+  <div id="hdr-prog">0 / 10 zodpovězeno</div>
+  <button id="lock-btn" onclick="manualLock()">🔒</button>
+</div>
+
+<div id="map-wrap">
+<svg id="map" viewBox="0 0 700 870" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="seaGrad" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0%" stop-color="#1e5080"/>
+      <stop offset="100%" stop-color="#0a2540"/>
+    </linearGradient>
+    <linearGradient id="landSpGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#cdd8a4"/>
+      <stop offset="100%" stop-color="#b8c88a"/>
+    </linearGradient>
+    <linearGradient id="landBgGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#c8ccaa"/>
+      <stop offset="100%" stop-color="#b4bc96"/>
+    </linearGradient>
+    <filter id="lshadow" x="-5%" y="-5%" width="115%" height="120%">
+      <feDropShadow dx="3" dy="5" stdDeviation="4" flood-color="rgba(0,0,0,0.45)"/>
+    </filter>
+  </defs>
+  <!-- Ocean -->
+  <rect width="700" height="870" fill="url(#seaGrad)"/>
+  <!-- Graticule -->
+  <g id="graticule" stroke="rgba(255,255,255,.07)" stroke-width=".6" fill="none">
+    <!-- Latitude lines every 10° -->
+    <line x1="0" y1="47" x2="700" y2="47"/>
+    <line x1="0" y1="142" x2="700" y2="142"/>
+    <line x1="0" y1="236" x2="700" y2="236"/>
+    <line x1="0" y1="331" x2="700" y2="331"/>
+    <line x1="0" y1="426" x2="700" y2="426"/>
+    <line x1="0" y1="520" x2="700" y2="520"/>
+    <line x1="0" y1="615" x2="700" y2="615"/>
+    <line x1="0" y1="709" x2="700" y2="709"/>
+    <line x1="0" y1="804" x2="700" y2="804"/>
+    <!-- Longitude lines every 10° -->
+    <line x1="78" y1="0" x2="78" y2="870"/>
+    <line x1="156" y1="0" x2="156" y2="870"/>
+    <line x1="233" y1="0" x2="233" y2="870"/>
+    <line x1="311" y1="0" x2="311" y2="870"/>
+    <line x1="389" y1="0" x2="389" y2="870"/>
+    <line x1="467" y1="0" x2="467" y2="870"/>
+    <line x1="544" y1="0" x2="544" y2="870"/>
+    <line x1="622" y1="0" x2="622" y2="870"/>
+  </g>
+  <!-- Special lines -->
+  <g fill="none">
+    <!-- Tropic of Cancer 23.44N -->
+    <line x1="0" y1="109" x2="700" y2="109" stroke="rgba(255,220,100,.18)" stroke-width="1" stroke-dasharray="6,4"/>
+    <!-- Equator -->
+    <line x1="0" y1="331" x2="700" y2="331" stroke="rgba(255,220,100,.22)" stroke-width="1" stroke-dasharray="6,4"/>
+    <!-- Tropic of Capricorn 23.44S -->
+    <line x1="0" y1="553" x2="700" y2="553" stroke="rgba(255,220,100,.18)" stroke-width="1" stroke-dasharray="6,4"/>
+  </g>
+  <!-- Graticule labels -->
+  <g fill="rgba(255,255,255,.28)" font-size="7" font-family="'Courier New',Consolas,monospace">
+    <text x="3" y="46">30°N</text><text x="3" y="141">20°N</text>
+    <text x="3" y="235">10°N</text><text x="3" y="106">23°N</text>
+    <text x="3" y="329">0°</text><text x="3" y="425">10°S</text>
+    <text x="3" y="519">20°S</text><text x="3" y="551">23°S</text>
+    <text x="3" y="614">30°S</text><text x="3" y="708">40°S</text>
+    <text x="3" y="803">50°S</text>
+    <text x="75" y="864" text-anchor="middle">110°Z</text>
+    <text x="233" y="864" text-anchor="middle">90°Z</text>
+    <text x="389" y="864" text-anchor="middle">70°Z</text>
+    <text x="544" y="864" text-anchor="middle">50°Z</text>
+  </g>
+  <!-- Continent bases (filled first, no gaps) -->
+  <g id="g-base" filter="url(#lshadow)"></g>
+  <!-- Non-Spanish countries -->
+  <g id="g-bg"></g>
+  <!-- Spanish countries -->
+  <g id="g-sp"></g>
+  <g id="g-mkr"></g>
+</svg>
+</div>
+<div id="zoom-hint" style="text-align:center;color:rgba(255,255,255,.4);font-size:.7rem;padding:2px 0 6px;font-family:'Segoe UI',Arial,sans-serif;">Roztáhni prsty pro přiblížení &bull; Dvojitý tap pro reset</div>
+
+<!-- STUDENT WARNING -->
+<div class="ov on" id="warn-ov" style="align-items:flex-start;padding-top:16px">
+  <div class="card">
+    <div class="warn-top">
+      <span class="ico">📋</span>
+      <h2>Před zahájením testu</h2>
+      <p>Slepá mapa – španělsky mluvící státy Latinské Ameriky</p>
+    </div>
+    <ul class="rules">
+      <li class="no">
+        <span class="ic">🚫</span>
+        <span><strong>Nepřepínej záložky ani aplikace.</strong> Test se okamžitě zamkne a bude zaznamenáno porušení pravidel.</span>
+      </li>
+      <li class="no">
+        <span class="ic">🚫</span>
+        <span><strong>Neobnov stránku.</strong> Test nelze po obnovení znovu spustit.</span>
+      </li>
+      <li class="no">
+        <span class="ic">🚫</span>
+        <span><strong>Nezavírej a znovu neotevírej soubor.</strong> Test je možné spustit pouze jednou na tomto zařízení.</span>
+      </li>
+      <li class="yes" style="background:#fffbe6;border-left:3px solid #f0c030">
+        <span class="ic">✏️</span>
+        <span><strong>Odpovědi piš španělsky.</strong> Dodržuj velká písmena i diakritiku — <em>México</em> ✅, <em>mexico</em> ❌, <em>Mexico</em> ❌, <em>Mexiko</em> ❌.</span>
+      </li>
+      <li class="yes">
+        <span class="ic">✅</span>
+        <span>Klikni na číslo na mapě, napiš odpověď a potvrď. Celkem 10 otázek.</span>
+      </li>
+      <li class="yes">
+        <span class="ic">📸</span>
+        <span>Na konci <strong>udělej screenshot</strong> výsledkové tabulky a pošli ho učiteli na e-mail.</span>
+      </li>
+    </ul>
+    <div id="name-wrap">
+      <label for="student-name-input">Jméno a příjmení</label>
+      <input type="text" id="student-name-input"
+        placeholder="Napište své jméno a příjmení..."
+        autocomplete="off" autocorrect="off" spellcheck="false"
+        oninput="checkReady()">
+      <div id="name-err">Zadejte prosím jméno a příjmení (min. 3 znaky).</div>
+    </div>
+    <label class="agree-row">
+      <input type="checkbox" id="agree-chk" onchange="checkReady()">
+      <span>Přečetl/a jsem pravidla a souhlasím s podmínkami testu.</span>
+    </label>
+    <button id="btn-start" disabled onclick="startQuiz()">Začít test</button>
+  </div>
+</div>
+
+<!-- QUESTION -->
+<div class="ov" id="q-ov">
+  <div class="card" style="margin-top:20px">
+    <div class="q-counter" id="q-count"></div>
+    <h2 id="q-title"></h2>
+    <div class="q-box" id="q-text"></div>
+    <input type="text" id="q-input" placeholder="Napište odpověď…"
+      autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+    <div class="fb" id="q-fb"></div>
+    <div class="row-btns">
+      <button class="btn btn-p" id="q-submit" onclick="submitAnswer()">Potvrdit</button>
+      <button class="btn btn-s" onclick="closeQ()">Zavřít</button>
+    </div>
+  </div>
+</div>
+
+<!-- RESULTS -->
+<div class="ov" id="res-ov" style="align-items:flex-start;padding-top:12px">
+  <div class="card wide" style="margin-top:8px">
+    <h2>Výsledky testu</h2>
+    <div id="res-inner"></div>
+  </div>
+</div>
+
+<!-- ALREADY DONE -->
+<div class="fullscreen" id="done-ov">
+  <div class="big-ico">🔒</div>
+  <h2>Test byl již odevzdán</h2>
+  <p>Tento test byl na tomto zařízení již absolvován.<br>Nelze ho spustit znovu.</p>
+  <div class="done-score" id="done-score"></div>
+  <div class="done-grade" id="done-grade"></div>
+  <div class="done-sep"></div>
+  <p class="done-lbl">Pouze pro učitele – zadej heslo pro reset:</p>
+  <div class="reset-row">
+    <input type="password" id="done-pass" placeholder="Heslo ucitele"
+      onkeydown="if(event.key==='Enter')resetQuiz()">
+    <button class="btn-reset" onclick="resetQuiz()">Resetovat</button>
+  </div>
+  <div id="done-err"></div>
+</div>
+
+<!-- LOCK -->
+<div class="fullscreen" id="lock-ov">
+  <div id="lock-icon" onclick="lockClick()">🔒</div>
+  <h2>TEST JE ZAMČEN</h2>
+  <p class="sub">Přepnutí záložky nebo aplikace není povoleno.<br>Kontaktuj učitele.</p>
+  <div id="lock-dots"></div>
+  <div id="lock-pass-area">
+    <input type="password" id="lock-pass" placeholder="Heslo ucitele"
+      onkeydown="if(event.key==='Enter')tryUnlock()">
+    <button class="btn-unlock" onclick="tryUnlock()">Odemknout</button>
+    <div id="lock-err"></div>
+  </div>
+</div>
+
+<script>
+/* =========================================
+   COORDINATE HELPERS
+========================================= */
+var W=700,H=870;
+function sx(lon){return (lon+120)/90*W}
+function sy(lat){return (35-lat)/92*H}
+function toPts(lls){
+  return lls.map(function(ll){return sx(ll[0]).toFixed(1)+','+sy(ll[1]).toFixed(1)}).join(' ')
+}
+
+/* =========================================
+   DETAILED POLYGON DATA (pre-computed)
+========================================= */
+var POLYS={
+  mexico_main:'22.6,23.6 40.4,23.6 69.2,35.0 91.8,35.0 105.0,30.3 117.4,51.1 140.0,50.1 150.1,66.2 159.4,72.8 167.2,82.3 178.9,86.1 177.3,114.4 186.7,149.4 198.3,160.8 215.4,156.0 224.0,154.1 229.4,132.4 252.0,127.7 257.4,129.6 252.8,157.9 245.0,181.6 216.2,165.5 197.6,178.7 178.9,180.6 172.7,174.9 136.1,156.0 118.2,146.6 111.2,127.7 93.3,80.4 81.7,70.9 42.8,37.8 22.6,23.6',
+  mexico_baja:'22.6,23.6 27.2,42.6 38.9,52.0 46.7,66.2 54.4,75.7 66.1,85.1 77.8,99.3 81.7,110.6 77.8,108.8 73.9,104.0 66.1,89.8 58.3,75.7 50.6,61.5 42.8,52.0 39.7,42.6 22.6,23.6',
+  guatemala:'216.2,165.5 239.6,160.8 241.1,180.6 241.9,186.3 238.8,193.9 232.6,199.5 216.2,193.9 214.7,189.1 216.2,165.5',
+  honduras:'239.6,180.6 241.9,186.3 251.2,199.5 280.8,193.9 286.2,189.1 280.0,180.6 280.0,178.7 241.1,179.7 239.6,180.6',
+  el_salvador:'232.6,199.5 251.2,207.1 251.2,199.5 241.9,186.3 232.6,199.5',
+  nicaragua:'251.2,198.6 286.2,189.1 287.0,227.9 273.0,227.0 251.2,227.0 251.2,208.0 251.2,198.6',
+  costa_rica:'273.0,227.0 287.0,227.9 291.7,238.3 287.8,247.8 275.3,248.7 266.8,237.4 270.7,227.0 273.0,227.0',
+  panama:'288.6,238.3 344.6,254.4 332.9,260.1 323.6,254.4 315.0,251.5 307.2,252.5 290.9,250.6 288.6,241.1 288.6,238.3',
+  cuba:'273.0,117.3 287.8,111.6 303.3,108.8 315.0,112.5 326.7,118.2 356.2,139.0 353.9,142.8 334.4,143.7 311.1,122.9 291.7,119.2 273.0,117.3',
+  dominican:'373.3,144.7 377.2,142.8 394.3,142.8 400.6,154.1 400.6,157.9 377.2,162.7 373.3,160.8 373.3,144.7',
+  colombia:'331.3,248.7 340.7,250.6 344.6,227.0 365.6,212.8 408.3,271.4 406.0,312.1 350.0,335.7 332.1,317.7 326.7,309.2 331.3,248.7',
+  venezuela:'365.6,212.8 436.3,222.2 460.4,249.7 462.0,281.8 406.0,312.1 408.3,271.4 365.6,212.8',
+  ecuador:'332.1,317.7 350.0,335.7 346.1,378.3 320.4,378.3 311.1,354.6 311.1,326.2 332.1,317.7',
+  peru:'350.0,335.7 385.0,373.5 404.4,430.3 404.4,463.4 396.7,491.7 350.0,463.4 334.4,406.6 303.3,373.5 307.2,340.4 350.0,335.7',
+  bolivia:'396.7,430.3 462.8,430.3 483.8,534.3 465.1,539.0 404.4,539.0 396.7,496.5 396.7,430.3',
+  chile:'404.4,496.5 388.9,504.0 385.0,548.5 381.1,614.7 377.2,647.8 373.3,690.3 365.6,728.2 357.8,766.0 350.0,803.8 353.9,822.7 400.6,846.4 404.4,822.7 404.4,728.2 404.4,614.7 404.4,496.5',
+  argentina:'427.8,539.0 462.8,539.0 486.1,557.9 516.4,649.7 493.9,690.3 486.1,709.2 443.3,728.2 427.8,756.5 416.1,794.3 400.6,846.4 404.4,822.7 404.4,728.2 404.4,614.7 388.9,576.8 404.4,539.0 427.8,539.0',
+  paraguay:'446.4,539.0 483.8,534.3 513.3,553.2 505.6,591.0 480.7,591.0 446.4,539.0',
+  uruguay:'482.2,614.7 517.2,633.6 524.2,652.5 497.8,661.0 479.1,648.7 482.2,614.7',
+  puerto_rico:'409.9,156.0 423.1,156.0 423.1,161.7 409.9,161.7'
+};
+var BASE_POLYS={
+  sa:'331.3,248.7 340.7,250.6 344.6,227.0 365.6,212.8 436.3,222.2 460.4,249.7 488.4,275.2 513.3,275.2 532.0,291.3 540.6,281.8 591.1,283.7 661.1,378.3 661.1,415.1 645.6,435.0 633.9,463.4 630.0,501.2 618.3,520.1 614.4,548.5 556.1,600.5 517.2,649.7 524.2,652.5 497.8,661.0 486.1,709.2 427.8,756.5 416.1,794.3 400.6,846.4 353.9,822.7 350.0,803.8 357.8,766.0 365.6,728.2 373.3,690.3 377.2,647.8 381.1,614.7 385.0,548.5 388.9,504.0 385.0,496.5 373.3,463.4 350.0,406.6 334.4,378.3 307.2,340.4 311.1,326.2 311.1,309.2 326.7,309.2 331.3,248.7',
+  nca:'22.6,23.6 178.9,86.1 252.8,157.9 286.2,189.1 287.0,227.9 291.7,238.3 344.6,254.4 332.9,260.1 307.2,252.5 290.9,250.6 266.8,237.4 251.2,227.0 251.2,207.1 232.6,199.5 216.2,193.9 172.7,174.9 178.9,180.6 136.1,156.0 118.2,146.6 111.2,127.7 93.3,80.4 81.7,70.9 42.8,37.8 22.6,23.6',
+  baja:'22.6,23.6 27.2,42.6 38.9,52.0 46.7,66.2 54.4,75.7 66.1,85.1 77.8,99.3 81.7,110.6 77.8,108.8 73.9,104.0 66.1,89.8 58.3,75.7 50.6,61.5 42.8,52.0 39.7,42.6 22.6,23.6'
+};
+var BG_POLYS={
+  belize:'239.6,160.8 250.4,158.9 252.8,160.8 248.1,180.6 241.1,180.6 239.6,160.8',
+  haiti:'353.9,142.8 373.3,144.7 373.3,160.8 361.7,160.8 353.9,142.8',
+  jamaica:'324.3,156.0 340.7,156.0 340.7,163.6 324.3,163.6 324.3,156.0',
+  guyana:'466.7,249.7 488.4,275.2 490.0,312.1 466.7,312.1 466.7,249.7',
+  suriname:'488.4,275.2 513.3,275.2 513.3,312.1 490.0,312.1 488.4,275.2',
+  french_guiana:'513.3,275.2 532.0,291.3 532.0,312.1 513.3,312.1 513.3,275.2',
+  brazil:'540.6,281.8 591.1,283.7 661.1,378.3 661.1,415.1 645.6,435.0 633.9,463.4 630.0,501.2 618.3,520.1 614.4,548.5 556.1,600.5 517.2,649.7 513.3,553.2 483.8,534.3 462.8,539.0 462.8,453.9 365.6,425.5 366.3,419.9 385.0,373.5 406.0,312.1 466.7,281.8 540.6,281.8'
+};
+
+/* =========================================
+   COUNTRY DEFINITIONS
+========================================= */
+var COUNTRIES=[
+  {id:'mexico',cs:'México',capital:'Ciudad de México',
+   nn:['México'],cc:['Ciudad de México','México'],
+   cen:[-102,23],polyIds:['mexico_main','mexico_baja']},
+  {id:'guatemala',cs:'Guatemala',capital:'Ciudad de Guatemala',
+   nn:['Guatemala'],cc:['Ciudad de Guatemala','Guatemala'],
+   cen:[-90.5,15.5],polyIds:['guatemala']},
+  {id:'honduras',cs:'Honduras',capital:'Tegucigalpa',
+   nn:['Honduras'],cc:['Tegucigalpa'],
+   cen:[-86.5,15.0],polyIds:['honduras']},
+  {id:'el_salvador',cs:'El Salvador',capital:'San Salvador',
+   nn:['El Salvador'],cc:['San Salvador'],
+   cen:[-88.9,13.8],polyIds:['el_salvador']},
+  {id:'nicaragua',cs:'Nicaragua',capital:'Managua',
+   nn:['Nicaragua'],cc:['Managua'],
+   cen:[-85.5,12.5],polyIds:['nicaragua']},
+  {id:'costa_rica',cs:'Costa Rica',capital:'San José',
+   nn:['Costa Rica'],cc:['San José'],
+   cen:[-84.0,10.0],polyIds:['costa_rica']},
+  {id:'panama',cs:'Panamá',capital:'Ciudad de Panamá',
+   nn:['Panamá'],cc:['Ciudad de Panamá','Panamá'],
+   cen:[-79.0,9.0],polyIds:['panama']},
+  {id:'cuba',cs:'Cuba',capital:'La Habana',
+   nn:['Cuba'],cc:['La Habana'],
+   cen:[-79.5,21.5],polyIds:['cuba']},
+  {id:'dominican',cs:'República Dominicana',capital:'Santo Domingo',
+   nn:['República Dominicana'],cc:['Santo Domingo'],
+   cen:[-70.5,19.0],polyIds:['dominican']},
+  {id:'puerto_rico',cs:'Puerto Rico',capital:'San Juan',
+   nn:['Puerto Rico'],cc:['San Juan'],
+   cen:[-66.45,18.22],polyIds:['puerto_rico']},
+  {id:'colombia',cs:'Colombia',capital:'Bogotá',
+   nn:['Colombia'],cc:['Bogotá'],
+   cen:[-74.0,4.5],polyIds:['colombia']},
+  {id:'venezuela',cs:'Venezuela',capital:'Caracas',
+   nn:['Venezuela'],cc:['Caracas'],
+   cen:[-66.0,8.0],polyIds:['venezuela']},
+  {id:'ecuador',cs:'Ecuador',capital:'Quito',
+   nn:['Ecuador'],cc:['Quito'],
+   cen:[-79.5,-1.5],polyIds:['ecuador']},
+  {id:'peru',cs:'Perú',capital:'Lima',
+   nn:['Perú'],cc:['Lima'],
+   cen:[-74.5,-13.0],polyIds:['peru']},
+  {id:'bolivia',cs:'Bolivia',capital:'Sucre',
+   nn:['Bolivia'],cc:['Sucre','La Paz'],
+   cen:[-64.0,-17.0],polyIds:['bolivia']},
+  {id:'chile',cs:'Chile',capital:'Santiago de Chile',
+   nn:['Chile'],cc:['Santiago de Chile','Santiago'],
+   cen:[-70.5,-33.0],polyIds:['chile']},
+  {id:'argentina',cs:'Argentina',capital:'Buenos Aires',
+   nn:['Argentina'],cc:['Buenos Aires'],
+   cen:[-64.0,-36.0],polyIds:['argentina']},
+  {id:'paraguay',cs:'Paraguay',capital:'Asunción',
+   nn:['Paraguay'],cc:['Asunción'],
+   cen:[-58.5,-23.5],polyIds:['paraguay']},
+  {id:'uruguay',cs:'Uruguay',capital:'Montevideo',
+   nn:['Uruguay'],cc:['Montevideo'],
+   cen:[-56.0,-32.5],polyIds:['uruguay']}
+];
+
+/* =========================================
+   STATE
+========================================= */
+var selected=[],answers=[],currentIdx=-1,currentQ=null,answered=0,quizLive=false;
+var LS_KEY='latam_quiz_v3';
+var LS_STATE='latam_state_v3';
+var studentName='',testId='',timerInterval=null;
+
+function generateTestId(){
+  var ch='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  function seg(n){var s='';for(var i=0;i<n;i++)s+=ch[Math.floor(Math.random()*ch.length)];return s}
+  return seg(2)+'-'+seg(2)+'-'+seg(3);
+}
+function pad2(n){return String(n).padStart(2,'0')}
+function nowStr(){
+  var d=new Date();
+  return d.getDate()+'.'+pad2(d.getMonth()+1)+'.'+d.getFullYear()
+    +' '+pad2(d.getHours())+':'+pad2(d.getMinutes())+':'+pad2(d.getSeconds());
+}
+
+function shuffle(arr){
+  var a=arr.slice();
+  for(var i=a.length-1;i>0;i--){
+    var j=Math.floor(Math.random()*(i+1));
+    var t=a[i];a[i]=a[j];a[j]=t
+  }
+  return a
+}
+// norm() zachovává velká písmena I diakritiku — obojí je povinné
+function norm(s){
+  return s.trim().replace(/\s+/g,' ')
+}
+
+/* =========================================
+   RENDER MAP
+========================================= */
+function mkPoly(pts,cls,dataId){
+  var el=document.createElementNS('http://www.w3.org/2000/svg','polygon');
+  el.setAttribute('points',pts);
+  el.setAttribute('class',cls);
+  if(dataId)el.setAttribute('data-id',dataId);
+  return el
+}
+
+function renderMap(){
+  var gBase=document.getElementById('g-base');
+  var gBg=document.getElementById('g-bg');
+  var gSp=document.getElementById('g-sp');
+  gBase.innerHTML='';gBg.innerHTML='';gSp.innerHTML='';
+  // Continent bases — filled solid so no ocean shows through gaps
+  Object.keys(BASE_POLYS).forEach(function(k){
+    var el=mkPoly(BASE_POLYS[k],'ctry-base',null);
+    gBase.appendChild(el)
+  });
+  Object.keys(BG_POLYS).forEach(function(k){
+    gBg.appendChild(mkPoly(BG_POLYS[k],'ctry-bg',null))
+  });
+  COUNTRIES.forEach(function(c){
+    c.polyIds.forEach(function(pid){
+      if(POLYS[pid]){
+        gSp.appendChild(mkPoly(POLYS[pid],'ctry-sp',c.id))
+      }
+    })
+  })
+}
+
+function renderMarkers(){
+  var g=document.getElementById('g-mkr');
+  g.innerHTML='';
+  selected.forEach(function(c,i){
+    var x=parseFloat(sx(c.cen[0]).toFixed(1));
+    var y=parseFloat(sy(c.cen[1]).toFixed(1));
+    var grp=document.createElementNS('http://www.w3.org/2000/svg','g');
+    grp.setAttribute('class','mkr');
+    grp.setAttribute('id','mkr-'+c.id);
+    grp.setAttribute('onclick','openQ('+i+')');
+    var co=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    co.setAttribute('cx',x);co.setAttribute('cy',y);co.setAttribute('r',16);
+    co.setAttribute('class','outer');
+    var ci=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    ci.setAttribute('cx',x);ci.setAttribute('cy',y);ci.setAttribute('r',11);
+    ci.setAttribute('class','inner');
+    var tx=document.createElementNS('http://www.w3.org/2000/svg','text');
+    tx.setAttribute('x',x);tx.setAttribute('y',y);
+    tx.textContent=String(i+1);
+    grp.appendChild(co);grp.appendChild(ci);grp.appendChild(tx);
+    g.appendChild(grp)
+  })
+}
+
+function setPolyClass(cid,cls){
+  document.querySelectorAll('[data-id="'+cid+'"]').forEach(function(el){
+    el.className.baseVal='ctry-sp'+(cls?' '+cls:'')
+  })
+}
+
+/* =========================================
+   WARNING / START
+========================================= */
+function checkReady(){
+  var name=(document.getElementById('student-name-input').value||'').trim();
+  var chk=document.getElementById('agree-chk').checked;
+  var btn=document.getElementById('btn-start');
+  var err=document.getElementById('name-err');
+  var ok=name.length>=3&&chk;
+  btn.disabled=!ok;
+  if(ok)btn.classList.add('rdy'); else btn.classList.remove('rdy');
+  err.style.display=(name.length>0&&name.length<3)?'block':'none';
+}
+function startQuiz(){
+  var name=(document.getElementById('student-name-input').value||'').trim();
+  if(name.length<3)return;
+  studentName=name;
+  testId=generateTestId();
+  var startTime=Date.now();
+  // Uloz meta
+  try{localStorage.setItem(LS_STATE,JSON.stringify({
+    studentName:studentName,testId:testId,
+    startTime:startTime,answers:[],selected:[],answered:0
+  }))}catch(e){}
+  document.getElementById('warn-ov').classList.remove('on');
+  quizLive=true;
+  try{sessionStorage.setItem('latam_session','active')}catch(e){}
+  document.getElementById('timer-wrap').style.display='flex';
+  startTimer(startTime);
+  init();
+}
+function init(){
+  selected=shuffle(COUNTRIES).slice(0,10);
+  var types=shuffle([0,0,0,0,0,1,1,1,1,1]);
+  selected=selected.map(function(c,i){
+    return {id:c.id,cs:c.cs,capital:c.capital,nn:c.nn,cc:c.cc,
+            cen:c.cen,polyIds:c.polyIds,qType:types[i]}
+  });
+  answers=selected.map(function(){return null});
+  answered=0;
+  renderMarkers();
+  updateProg()
+}
+function updateProg(){
+  document.getElementById('hdr-prog').textContent=answered+' / 10 zodpovězeno'
+}
+function saveState(){
+  try{
+    var st=JSON.parse(localStorage.getItem(LS_STATE)||'{}');
+    st.answers=answers;
+    st.answered=answered;
+    // Uloz selected bez kruzkovych referencí
+    st.selected=selected.map(function(c){
+      return {id:c.id,cs:c.cs,capital:c.capital,nn:c.nn,cc:c.cc,
+              cen:c.cen,polyIds:c.polyIds,qType:c.qType}
+    });
+    localStorage.setItem(LS_STATE,JSON.stringify(st));
+  }catch(e){}
+}
+function startTimer(startTime){
+  var DURATION=15*60;
+  var disp=document.getElementById('timer-val');
+  function tick(){
+    var elapsed=Math.floor((Date.now()-startTime)/1000);
+    var left=Math.max(0,DURATION-elapsed);
+    var m=Math.floor(left/60);
+    var s=left%60;
+    disp.textContent=m+':'+pad2(s);
+    disp.classList.remove('warn','danger');
+    if(left<=300)disp.classList.add('danger');
+    else if(left<=480)disp.classList.add('warn');
+    if(left===0){
+      clearInterval(timerInterval);
+      if(answered>0)lock();
+    }
+  }
+  tick();
+  timerInterval=setInterval(tick,1000);
+}
+
+/* =========================================
+   QUESTION FLOW
+========================================= */
+function openQ(idx){
+  if(answers[idx]!==null)return;
+  currentIdx=idx;currentQ=selected[idx];
+  document.getElementById('q-count').textContent='Otázka '+(idx+1)+' z 10';
+  document.getElementById('q-title').textContent=
+    currentQ.qType===0?'Jak se jmenuje tento stát?':'Jaké je hlavní město tohoto státu?';
+  document.getElementById('q-text').textContent=
+    currentQ.qType===0
+      ?'Stát označený číslem '+(idx+1)+'. Napište jeho název španělsky (dodržujte velká písmena).'
+      :'Stát označený číslem '+(idx+1)+'. Napište španělsky název jeho hlavního města (dodržujte velká písmena).';
+  document.getElementById('q-input').value='';
+  document.getElementById('q-fb').className='fb';
+  document.getElementById('q-submit').disabled=false;
+  document.getElementById('q-ov').classList.add('on');
+  setTimeout(function(){document.getElementById('q-input').focus()},130);
+  document.querySelectorAll('[data-id]').forEach(function(el){el.classList.remove('ctry-sel')});
+  currentQ.polyIds.forEach(function(pid){
+    document.querySelectorAll('[data-id="'+currentQ.id+'"]').forEach(function(el){
+      el.classList.add('ctry-sel')
+    })
+  })
+}
+function closeQ(){
+  document.getElementById('q-ov').classList.remove('on');
+  document.querySelectorAll('.ctry-sel').forEach(function(el){el.classList.remove('ctry-sel')})
+}
+function submitAnswer(){
+  if(!currentQ)return;
+  var raw=document.getElementById('q-input').value.trim();
+  if(!raw)return;
+  var u=norm(raw);
+  var pool=(currentQ.qType===0?currentQ.nn:currentQ.cc).map(norm);
+  var ok=pool.some(function(a){
+    return a===u||(u.length>2&&(u.indexOf(a)>=0||a.indexOf(u)>=0))
+  });
+  var correct=currentQ.qType===0?currentQ.cs:currentQ.capital;
+  answers[currentIdx]={raw:raw,ok:ok,correct:correct};
+  answered++;
+  updateProg();
+  var mkr=document.getElementById('mkr-'+currentQ.id);
+  if(mkr){mkr.classList.remove('mkr-ok','mkr-bad');mkr.classList.add(ok?'mkr-ok':'mkr-bad')}
+  setPolyClass(currentQ.id,ok?'ctry-ok':'ctry-bad');
+  var fb=document.getElementById('q-fb');
+  fb.className='fb '+(ok?'ok':'bad');
+  var wrongHint='';
+  if(!ok){
+    var rawLower=norm(raw).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    var poolStripped=(currentQ.qType===0?currentQ.nn:currentQ.cc).map(function(a){
+      return a.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    });
+    if(poolStripped.some(function(a){return a===rawLower})){
+      wrongHint=' (Zkontroluj velká písmena a diakritiku!)'
+    }
+  }
+  fb.textContent=ok?'Správně! Výborně!':'Špatně. Správná odpověď: '+correct+wrongHint;
+  document.getElementById('q-submit').disabled=true;
+  saveState();
+  setTimeout(function(){
+    closeQ();
+    if(answered>=10)setTimeout(showResults,400)
+  },2300)
+}
+
+
+/* =========================================
+   RESULTS
+========================================= */
+function calcGrade(s){
+  if(s>=9)return{n:1,l:'výborně',cls:'g1'}
+  if(s>=7)return{n:2,l:'chvalitebně',cls:'g2'}
+  if(s>=5)return{n:3,l:'dobře',cls:'g3'}
+  if(s>=3)return{n:4,l:'dostatečně',cls:'g4'}
+  return{n:5,l:'nedostatečně',cls:'g5'}
+}
+function showResults(){
+  clearInterval(timerInterval);
+  quizLive=false;
+  var score=answers.filter(function(a){return a&&a.ok}).length;
+  var pct=Math.round(score/10*100);
+  var grade=calcGrade(score);
+  var ts=nowStr();
+  // Uloz kompletni vysledek
+  try{
+    localStorage.setItem(LS_KEY,JSON.stringify({
+      score:score,pct:pct,grade:grade.n,gradeLabel:grade.l,
+      studentName:studentName,testId:testId,ts:ts
+    }));
+    // Smazat prubezny stav
+    localStorage.removeItem(LS_STATE);
+  }catch(e){}
+  // Sestav tabulku
+  var rows='';
+  selected.forEach(function(c,i){
+    var a=answers[i]||{raw:'—',ok:false,correct:c.qType===0?c.cs:c.capital};
+    var ql=c.qType===0?'Stat':'Mesto';
+    rows+='<tr class="'+(a.ok?'row-ok':'row-bad')+'">'
+      +'<td>'+(i+1)+'</td><td>'+ql+'</td>'
+      +'<td>'+(a.raw||'—')+'</td>'
+      +'<td><strong>'+a.correct+'</strong></td>'
+      +'<td>'+(a.ok?'✅':'❌')+'</td></tr>';
+  });
+  document.getElementById('res-inner').innerHTML=
+    '<div class="res-meta">'
+      +'<div class="res-meta-row"><span class="res-meta-lbl">Student</span><span class="res-meta-val">'+studentName+'</span></div>'
+      +'<div class="res-meta-row"><span class="res-meta-lbl">Test ID</span><span class="res-meta-val mono">'+testId+'</span></div>'
+      +'<div class="res-meta-row"><span class="res-meta-lbl">Odevzdáno</span><span class="res-meta-val">'+ts+'</span></div>'
+    +'</div>'
+    +'<div class="grade-wrap">'
+      +'<div class="grade-num '+grade.cls+'">'+grade.n+'</div>'
+      +'<div class="grade-lbl">'+grade.l+'</div>'
+    +'</div>'
+    +'<div class="score-row">'
+      +'<span class="score-txt">'+score+' / 10 bodů ('+pct+'%)</span>'
+      +'<div class="pbar-wrap"><div class="pbar-fill" id="pbar" style="width:0%"></div></div>'
+    +'</div>'
+    +'<table class="r-table"><thead>'
+      +'<tr><th>#</th><th>Typ</th><th>Odpověď</th><th>Správně</th><th></th></tr>'
+    +'</thead><tbody>'+rows+'</tbody></table>'
+    +'<div class="ss-box">'
+      +'<div class="cam">📸</div>'
+      +'<h3>Udělej screenshot a pošli učiteli!</h3>'
+      +'<p>Screenshot musí obsahovat tvé jméno, Test ID a čas odevzdání.</p>'
+    +'</div>';
+  document.getElementById('res-ov').classList.add('on');
+  setTimeout(function(){
+    var pb=document.getElementById('pbar');
+    if(pb)pb.style.width=pct+'%';
+  },300);
+}
+
+/* =========================================
+   LOCALSTORAGE
+========================================= */
+function checkDone(){
+  try{
+    var raw=localStorage.getItem(LS_KEY);
+    if(!raw)return false;
+    var d=JSON.parse(raw);
+    var info=(d.studentName?d.studentName+' | ':'')+(d.testId?d.testId:'');
+    document.getElementById('done-score').textContent=(info?info+' | ':'')+d.score+' / 10 bodů ('+d.pct+'%)';
+    document.getElementById('done-grade').textContent='Známka: '+d.grade+(d.ts?' | '+d.ts:'');
+    document.getElementById('warn-ov').classList.remove('on');
+    var dov=document.getElementById('done-ov');
+    dov.style.display='flex';dov.classList.add('on');
+    return true
+  }catch(e){return false}
+}
+function resetQuiz(){
+  if(document.getElementById('done-pass').value.toUpperCase()==='UCITEL'){
+    try{localStorage.removeItem(LS_KEY);localStorage.removeItem(LS_STATE);}catch(e){}
+    location.reload()
+  }else{
+    document.getElementById('done-err').textContent='Špatné heslo.';
+    document.getElementById('done-pass').value='';
+    document.getElementById('done-pass').focus()
+  }
+}
+
+/* =========================================
+   SECURITY
+========================================= */
+var locked=false;
+document.addEventListener('contextmenu',function(e){e.preventDefault()});
+document.addEventListener('selectstart',function(e){
+  if(!e.target.closest('input')&&!e.target.closest('label'))e.preventDefault()
+});
+document.addEventListener('keydown',function(e){
+  var k=(e.key||'').toLowerCase();
+  if(e.key==='F12'
+    ||(e.ctrlKey&&['s','u','i','j','a','p'].indexOf(k)>=0)
+    ||(e.ctrlKey&&e.shiftKey&&['i','j','c','k'].indexOf(k)>=0))
+    {e.preventDefault();e.stopPropagation()}
+});
+document.addEventListener('visibilitychange',function(){
+  if(document.hidden&&quizLive&&!locked)lock()
+});
+window.addEventListener('beforeunload',function(e){
+  if(quizLive&&answered>0&&answered<10){e.preventDefault();e.returnValue=''}
+});
+document.getElementById('q-input').addEventListener('keydown',function(e){
+  if(e.key==='Enter')submitAnswer()
+});
+function manualLock(){if(quizLive)lock()}
+function lock(){
+  if(locked)return;
+  locked=true;
+  document.getElementById('q-ov').classList.remove('on');
+  document.getElementById('lock-dots').textContent='';
+  document.getElementById('lock-pass-area').style.display='none';
+  document.getElementById('lock-err').textContent='';
+  document.getElementById('lock-pass').value='';
+  lkClicks=0;
+  document.getElementById('lock-ov').classList.add('on')
+}
+var lkClicks=0,lkTimer=null;
+function lockClick(){
+  lkClicks++;clearTimeout(lkTimer);
+  var d='';for(var i=0;i<5;i++)d+=(i<lkClicks?'●':'○')+' ';
+  document.getElementById('lock-dots').textContent=d.trim();
+  if(lkClicks>=5){
+    document.getElementById('lock-pass-area').style.display='flex';
+    document.getElementById('lock-dots').textContent='Zadej heslo:';
+    setTimeout(function(){document.getElementById('lock-pass').focus()},100);
+    lkClicks=0
+  }else{
+    lkTimer=setTimeout(function(){
+      lkClicks=0;
+      document.getElementById('lock-dots').textContent='';
+      document.getElementById('lock-pass-area').style.display='none'
+    },3000)
+  }
+}
+function tryUnlock(){
+  if(document.getElementById('lock-pass').value.toUpperCase()==='UCITEL'){
+    locked=false;
+    try{sessionStorage.setItem('latam_session','active')}catch(e){}
+    document.getElementById('lock-ov').classList.remove('on');
+    document.getElementById('lock-pass').value='';
+    document.getElementById('lock-err').textContent='';
+    lkClicks=0
+  }else{
+    document.getElementById('lock-err').textContent='Špatné heslo. Zkus to znovu.';
+    document.getElementById('lock-pass').value='';
+    document.getElementById('lock-pass').focus()
+  }
+}
+
+/* =========================================
+   COUNTRY COLORS (natural earth)
+========================================= */
+function applyBaseColors(){
+  // Continent base — same fill as quiz countries, no stroke → no phantom gaps
+  document.querySelectorAll('.ctry-base').forEach(function(el){
+    el.style.fill='#d0d8a8';el.style.stroke='none'
+  });
+  // Non-Spanish countries (Brazil, Guyana, …) — same fill, no border
+  // so they don't look like quiz targets
+  document.querySelectorAll('.ctry-bg').forEach(function(el){
+    el.style.fill='#d0d8a8';el.style.stroke='none'
+  });
+  document.querySelectorAll('.ctry-sp').forEach(function(el){
+    el.style.fill='#d0d8a8';el.style.stroke='#6a7a52';el.style.strokeWidth='0.9'
+  })
+}
+
+/* =========================================
+   PINCH-ZOOM + PAN
+========================================= */
+(function(){
+  var map=document.getElementById('map');
+  var wrap=document.getElementById('map-wrap');
+  var scale=1,maxScale=6,minScale=1;
+  var ox=0,oy=0;
+  // Pinch state
+  var pinching=false,lastDist=0,lastMx=0,lastMy=0;
+  // Pan state
+  var panning=false,panX0=0,panY0=0,ox0=0,oy0=0;
+  // Double-tap
+  var lastTapTime=0,lastTapWasPinch=false;
+  // PC drag
+  var mouseDrag=null;
+
+  function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+
+  function dist(t){
+    var dx=t[0].clientX-t[1].clientX;
+    var dy=t[0].clientY-t[1].clientY;
+    return Math.sqrt(dx*dx+dy*dy);
+  }
+  function mid(t){
+    return{x:(t[0].clientX+t[1].clientX)/2,
+           y:(t[0].clientY+t[1].clientY)/2};
+  }
+
+  function clampPan(){
+    // Omez posun tak, aby mapa nezašla příliš daleko
+    // (trochu volnější limity pro pohodlný pohyb)
+    var r=wrap.getBoundingClientRect();
+    var mapW=r.width*scale;
+    var mapH=mapW*(870/700); // zachovej poměr SVG viewBox
+    var margin=40; // px volnosti navíc
+    var minX=Math.min(0,r.width -mapW-margin);
+    var maxX=margin;
+    var minY=Math.min(0,r.height-mapH-margin);
+    var maxY=margin;
+    ox=clamp(ox,minX,maxX);
+    oy=clamp(oy,minY,maxY);
+  }
+
+  function applyT(){
+    map.style.transform='translate('+ox.toFixed(1)+'px,'+oy.toFixed(1)+'px) scale('+scale+')';
+  }
+
+  // ── TOUCH ──
+  map.addEventListener('touchstart',function(e){
+    if(e.touches.length===2){
+      e.preventDefault();
+      pinching=true;
+      panning=false;
+      lastTapWasPinch=true;
+      var r=wrap.getBoundingClientRect();
+      lastDist=dist(e.touches);
+      var m=mid(e.touches);
+      lastMx=m.x-r.left;
+      lastMy=m.y-r.top;
+    } else if(e.touches.length===1){
+      // Zatím NEVOLEJ preventDefault — počkej jestli je to tap nebo tah
+      panning=false; // rozhodneme až v touchmove
+      panX0=e.touches[0].clientX;
+      panY0=e.touches[0].clientY;
+      ox0=ox; oy0=oy;
+    }
+  },{passive:false});
+
+  map.addEventListener('touchmove',function(e){
+    if(pinching&&e.touches.length===2){
+      e.preventDefault();
+      var d=dist(e.touches);
+      var factor=d/lastDist;
+      var r=wrap.getBoundingClientRect();
+      var m=mid(e.touches);
+      var mx=m.x-r.left, my=m.y-r.top;
+      var ns=clamp(scale*factor,minScale,maxScale);
+      ox=(ox-mx)*(ns/scale)+mx;
+      oy=(oy-my)*(ns/scale)+my;
+      scale=ns;
+      lastDist=d;
+      lastMx=mx; lastMy=my;
+      clampPan();
+      applyT();
+    } else if(e.touches.length===1){
+      var dx=e.touches[0].clientX-panX0;
+      var dy=e.touches[0].clientY-panY0;
+      // Tah > 8px = pan, jinak ignoruj (je to tap)
+      if(!panning&&Math.sqrt(dx*dx+dy*dy)<8) return;
+      e.preventDefault();
+      panning=true;
+      ox=ox0+dx;
+      oy=oy0+dy;
+      if(scale>1) clampPan();
+      applyT();
+    }
+  },{passive:false});
+
+  map.addEventListener('touchend',function(e){
+    if(e.touches.length<2) pinching=false;
+    if(e.touches.length===0){
+      panning=false;
+      // Dvojité klepnutí = reset — ale NE po pinchi
+      if(!lastTapWasPinch){
+        var now=Date.now();
+        if(now-lastTapTime<320){
+          scale=1; ox=0; oy=0; applyT();
+        }
+        lastTapTime=now;
+      }
+      lastTapWasPinch=false;
+    }
+  },{passive:true});
+
+  // ── KOLEČKO MYŠI (PC) ──
+  wrap.addEventListener('wheel',function(e){
+    e.preventDefault();
+    var r=wrap.getBoundingClientRect();
+    var mx=e.clientX-r.left, my=e.clientY-r.top;
+    var factor=e.deltaY<0?1.15:0.87;
+    var ns=clamp(scale*factor,minScale,maxScale);
+    ox=(ox-mx)*(ns/scale)+mx;
+    oy=(oy-my)*(ns/scale)+my;
+    scale=ns;
+    clampPan();
+    applyT();
+  },{passive:false});
+
+  // ── DRAG MYŠÍ (PC) ──
+  wrap.addEventListener('mousedown',function(e){
+    if(e.button!==0)return;
+    mouseDrag={sx:e.clientX,sy:e.clientY,ox:ox,oy:oy};
+    wrap.style.cursor='grabbing';
+  });
+  window.addEventListener('mousemove',function(e){
+    if(!mouseDrag)return;
+    ox=mouseDrag.ox+(e.clientX-mouseDrag.sx);
+    oy=mouseDrag.oy+(e.clientY-mouseDrag.sy);
+    if(scale>1)clampPan();
+    applyT();
+  });
+  window.addEventListener('mouseup',function(){
+    if(!mouseDrag)return;
+    mouseDrag=null;
+    wrap.style.cursor=scale>1?'grab':'default';
+  });
+})();
+
+/* =========================================
+   BOOT
+========================================= */
+renderMap();
+applyBaseColors();
+if(!checkDone()){
+  try{
+    var st=localStorage.getItem(LS_STATE);
+    var ssActive=sessionStorage.getItem('latam_session')==='active';
+    if(st){
+      var sv=JSON.parse(st);
+      if(sv.selected&&sv.selected.length>0&&sv.answered<10){
+        var elapsed=sv.startTime?Math.floor((Date.now()-sv.startTime)/1000):0;
+        var left=Math.max(0,15*60-elapsed);
+        if(left<=0){
+          // Čas vypršel
+          localStorage.removeItem(LS_STATE);
+        } else if(ssActive){
+          // Session aktivní = odemčení učitelem → obnov stav a pokračuj
+          studentName=sv.studentName||'';
+          testId=sv.testId||'';
+          selected=sv.selected;
+          answers=sv.answers||selected.map(function(){return null});
+          answered=sv.answered||0;
+          quizLive=true;
+          renderMarkers();
+          updateProg();
+          selected.forEach(function(c,i){
+            var a=answers[i];
+            if(!a)return;
+            var mkr=document.getElementById('mkr-'+c.id);
+            if(mkr){mkr.classList.remove('mkr-ok','mkr-bad');mkr.classList.add(a.ok?'mkr-ok':'mkr-bad')}
+            setPolyClass(c.id,a.ok?'ctry-ok':'ctry-bad');
+          });
+          document.getElementById('timer-wrap').style.display='flex';
+          startTimer(sv.startTime||Date.now()-elapsed*1000);
+          document.getElementById('warn-ov').classList.remove('on');
+          if(answered>=10)setTimeout(showResults,200);
+        } else {
+          // Session neexistuje = soubor byl zavřen a znovu otevřen → zámek
+          studentName=sv.studentName||'';
+          testId=sv.testId||'';
+          selected=sv.selected;
+          answers=sv.answers||selected.map(function(){return null});
+          answered=sv.answered||0;
+          quizLive=true;
+          renderMarkers();
+          updateProg();
+          selected.forEach(function(c,i){
+            var a=answers[i];
+            if(!a)return;
+            var mkr=document.getElementById('mkr-'+c.id);
+            if(mkr){mkr.classList.remove('mkr-ok','mkr-bad');mkr.classList.add(a.ok?'mkr-ok':'mkr-bad')}
+            setPolyClass(c.id,a.ok?'ctry-ok':'ctry-bad');
+          });
+          document.getElementById('timer-wrap').style.display='flex';
+          document.getElementById('warn-ov').classList.remove('on');
+          lock(); // Okamžitě zamknout
+        }
+      }
+    }
+  }catch(e){}
+}
+</script>
+</body>
+</html>
